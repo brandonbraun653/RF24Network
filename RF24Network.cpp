@@ -1174,18 +1174,22 @@ bool RF24Network::write_to_pipe(uint16_t node, uint8_t pipe, bool multicast)
         radio.stopListening();
     }
 
+    /*------------------------------------------------
+    If we are multicasting, turn off auto ack. We don't
+    care how the message gets out as long as it does.
+    ------------------------------------------------*/
     if (multicast)
     {
-        radio.setAutoAck(0, 0);
+        radio.setAutoAck(0, false);
     }
     else
     {
-        radio.setAutoAck(0, 1);
+        radio.setAutoAck(0, true);
     }
 
     radio.openWritePipe(out_pipe);
 
-    ok = radio.write(frame_buffer, frame_size, true);
+    ok = radio.write(frame_buffer, frame_size, false);
 
     if (!(networkFlags & FLAG_FAST_FRAG))
     {
@@ -1200,12 +1204,6 @@ bool RF24Network::write_to_pipe(uint16_t node, uint8_t pipe, bool multicast)
 
 #endif
 
-    /*  #if defined (__arm__) || defined (RF24_LINUX)
-  IF_SERIAL_DEBUG(printf_P(PSTR("%u: MAC Sent on %x %s\n\r"),millis(),(uint32_t)out_pipe,ok?PSTR("ok"):PSTR("failed")));
-  #else
-  IF_SERIAL_DEBUG(printf_P(PSTR("%lu: MAC Sent on %lx %S\n\r"),millis(),(uint32_t)out_pipe,ok?PSTR("ok"):PSTR("failed")));
-  #endif
-*/
     return ok;
 }
 
