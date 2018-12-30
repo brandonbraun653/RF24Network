@@ -24,7 +24,7 @@
     /** \def
 	 * Saves memory by disabling fragmentation
 	 */
-    //#define DISABLE_FRAGMENTATION
+    #define DISABLE_FRAGMENTATION
 
     /** System defines */
 
@@ -48,12 +48,12 @@
     //#define ENABLE_NETWORK_STATS
 
     /** Enable dynamic payloads - If using different types of NRF24L01 modules, some may be incompatible when using this feature **/
-    #define ENABLE_DYNAMIC_PAYLOADS
+    //#define ENABLE_DYNAMIC_PAYLOADS
 
     /** Debug Options */
-    //#define SERIAL_DEBUG
-    //#define SERIAL_DEBUG_MINIMAL
-    //#define SERIAL_DEBUG_ROUTING
+    #define SERIAL_DEBUG
+    #define SERIAL_DEBUG_MINIMAL
+    #define SERIAL_DEBUG_ROUTING
     //#define SERIAL_DEBUG_FRAGMENTATION
     //#define SERIAL_DEBUG_FRAGMENTATION_L2
     /*************************************/
@@ -79,6 +79,7 @@
 
   #if !defined (ARDUINO_ARCH_AVR)
     #define sprintf_P sprintf
+    #define printf_P printf
   #endif
 
     #if defined (SERIAL_DEBUG_MINIMAL)
