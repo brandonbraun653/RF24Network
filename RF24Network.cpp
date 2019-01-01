@@ -125,7 +125,7 @@ void RF24Network::begin(uint8_t _channel, uint16_t _node_address)
     /*------------------------------------------------
     Use different retry periods to reduce data collisions
     ------------------------------------------------*/
-    uint8_t retryVar = (((node_address % 6) + 1) * 2) + 3;
+    auto retryVar = static_cast<AutoRetransmitDelay>((((node_address % 6) + 1) * 2) + 3);
     radio.setRetries(retryVar, 5); // max about 85ms per attempt
     
 
@@ -820,6 +820,14 @@ bool RF24Network::write(RF24NetworkHeader &header, const void *message, uint16_t
 
 bool RF24Network::write(RF24NetworkHeader &header, const void *message, uint16_t len, uint16_t writeDirect)
 {
+    /*------------------------------------------------
+    Protect against invalid inputs
+    ------------------------------------------------*/
+    if (!message || !len)
+    {
+        return false;
+    }
+    
     /*------------------------------------------------
     Allows time for requests (RF24Mesh) to get through between failed writes on busy nodes
     ------------------------------------------------*/
