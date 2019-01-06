@@ -271,7 +271,7 @@ namespace RF24Network
         *                           master node (00) at multicast Level 0
         *   @return void
         */
-        void multicastLevel(const uint8_t level);
+        void setMulticastLevel(const uint8_t level);
 
         /**
         *   Return the number of failures and successes for all transmitted payloads, routed or sent directly
@@ -410,18 +410,18 @@ namespace RF24Network
 
         NRF24L::NRF24L01 &radio; /**< Underlying radio driver, provides link/physical layers */
 
-        uint8_t multicast_level;
+        uint8_t multicastLevel;
 
-        uint8_t frame_queue[MAIN_BUFFER_SIZE]; /**< Space for a small set of frames that need to be delivered to the app layer */
+        uint8_t frameQueue[MAIN_BUFFER_SIZE]; /**< Space for a small set of frames that need to be delivered to the app layer */
 
-        uint8_t *next_frame; /**< Pointer into the @p frame_queue where we should place the next received frame */
+        uint8_t *nextFrame;    /**< Pointer into the frame_queue where we should place the next received frame */
 
-        Frame frag_queue;
+        Frame fragQueue;
         uint8_t fragQueueMessageBuffer[MAX_PAYLOAD_SIZE]; //frame size + 1
 
-        uint16_t parent_node; /**< Our parent's node address */
-        uint8_t parent_pipe;  /**< The pipe our parent uses to listen to us */
-        uint16_t node_mask;   /**< The bits which contain signfificant node address information */
+        uint16_t parentNode; /**< Our parent's node address */
+        uint8_t parentPipe;  /**< The pipe our parent uses to listen to us */
+        uint16_t nodeMask;   /**< The bits which contain signfificant node address information */
     };
 }
 

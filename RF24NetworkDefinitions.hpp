@@ -57,10 +57,10 @@ namespace RF24Network
     Debug Options
     ------------------------------------------------*/
     #define SERIAL_DEBUG
-    #define SERIAL_DEBUG_MINIMAL
-    #define SERIAL_DEBUG_ROUTING
-    #define SERIAL_DEBUG_FRAGMENTATION
-    #define SERIAL_DEBUG_FRAGMENTATION_L2
+    //#define SERIAL_DEBUG_MINIMAL
+    //#define SERIAL_DEBUG_ROUTING
+    //#define SERIAL_DEBUG_FRAGMENTATION
+    //#define SERIAL_DEBUG_FRAGMENTATION_L2
 
 
     #if defined(SERIAL_DEBUG)
@@ -228,6 +228,7 @@ namespace RF24Network
         OK = NO_ERROR,
         INVALID_ADDRESS,
         INVALID_INPUTS,
+        RADIO_NOT_CONNECTED,
 
     };
 }
