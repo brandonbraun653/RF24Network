@@ -160,7 +160,8 @@ namespace RF24Network
         *   @param[in]  node_address    The logical address of this node
         *   @return True if the setup was successful, false if not
         */
-        bool begin(const uint8_t channel, const uint16_t nodeAddress);
+        bool begin(const uint8_t channel, const uint16_t nodeAddress,
+                   const NRF24L::PowerAmplitude pwr = NRF24L::PowerAmplitude::MAX);
 
         /**
         *   Updates the internal network processing stack. This function must be called regularly to
@@ -380,6 +381,8 @@ namespace RF24Network
 
     private:
         ErrorType oopsies = ErrorType::NO_ERROR;
+
+        bool initialized = false;
 
         uint32_t txTime;
         uint8_t frameSize;

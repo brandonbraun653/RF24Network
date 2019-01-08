@@ -62,35 +62,56 @@ namespace RF24Network
         multicastRelay = 0;
     }
 
-    bool Network::begin(uint8_t channel, uint16_t nodeAddress)
+    bool Network::begin(const uint8_t channel, const uint16_t nodeAddress, const NRF24L::PowerAmplitude pwr)
     {
-        if (!radio.isConnected())
-        {
-            oopsies = ErrorType::RADIO_NOT_CONNECTED;
-            return false;
-        }
-        
+        /*------------------------------------------------
+        Check error conditions that would prevent a solid startup.
+        ------------------------------------------------*/
         if (!isValidNetworkAddress(nodeAddress))
         {
             oopsies = ErrorType::INVALID_ADDRESS;
+            IF_SERIAL_DEBUG(printf("ERR: Invalid node address\r\n"););
             return false;
         }
 
         /*------------------------------------------------
-        Set up the radio the way we want it to look
+        Turn on the radio. By default, this wipes all pre-existing settings.
         ------------------------------------------------*/
-        txTimeout = 25;
-        logicalNodeAddress = nodeAddress;
-        routeTimeout = txTimeout * 3; // Adjust for max delay per node within a single chain
-
-
-        radio.setChannel(channel);
-
+        if (radio.isInitialized())
+        {
+            /*------------------------------------------------
+            The system model is to interact with the network layer, not the
+            physical layer. Let this function initialize the radio.
+            ------------------------------------------------*/
+            oopsies = ErrorType::RADIO_PRE_INITIALIZED;
+            IF_SERIAL_DEBUG(printf("ERR: Radio pre-initialized\r\n"););
+            return false;
+        }
+        else if(!radio.begin())
+        {
+            /*------------------------------------------------
+            More than likely a register read/write failed.
+            ------------------------------------------------*/
+            oopsies = ErrorType::RADIO_FAILED_INIT;
+            IF_SERIAL_DEBUG(printf("ERR: Radio HW failed init\r\n"););
+            return false;
+        }
 
         /*------------------------------------------------
-        Turn off auto acknowledgement for Pipe0
+        Force the setup operations below to negate a failure
         ------------------------------------------------*/
-        radio.setAutoAck(0, false);
+        initialized = true;
+
+        /*------------------------------------------------
+        Initialize the radio
+        ------------------------------------------------*/
+        txTimeout = 25;
+        routeTimeout = txTimeout * 3; // Adjust for max delay per node within a single chain
+        logicalNodeAddress = nodeAddress;
+
+        initialized &= radio.setChannel(channel);
+        initialized &= radio.setPALevel(pwr);
+        initialized &= radio.setAutoAck(0, false);
 
         #if RF24Network_ENABLE_DYNAMIC_PAYLOADS
         radio.enableDynamicPayloads();
@@ -100,7 +121,7 @@ namespace RF24Network
         Use different retry periods to reduce data collisions
         ------------------------------------------------*/
         auto retryVar = static_cast<AutoRetransmitDelay>((((nodeAddress % 6) + 1) * 2) + 3);
-        radio.setRetries(retryVar, 5); // max about 85ms per attempt
+        initialized &= radio.setRetries(retryVar, 5);
 
         /*------------------------------------------------
         Set up the address helper cache
@@ -110,28 +131,24 @@ namespace RF24Network
         /*------------------------------------------------
         Open all the listening pipes
         ------------------------------------------------*/
-        uint8_t i = 6;
-        while (i--)
+        for (uint8_t i = 0; i < MAX_NUM_PIPES; i++)
         {
-            radio.openReadPipe(i, pipeAddress(nodeAddress, i));
+            initialized &= radio.openReadPipe(i, pipeAddress(nodeAddress, i));
         }
-        
-        radio.flushRX();
-
-        delayMilliseconds(1);
-        volatile bool empty = radio.rxFifoEmpty();
-        volatile uint8_t status = radio.getStatus();
-
-        RX_ADDR_P0::BitField pipe0Addr = RX_ADDR_P0::BitField();
-        pipe0Addr.update(&radio);
-
         radio.startListening();
 
-        return true;
+        return initialized;
     }
 
     MessageType Network::update()
     {
+        if (!initialized)
+        {
+            IF_SERIAL_DEBUG(printf("NET: Not initialized\r\n"););
+            oopsies = ErrorType::NOT_INITIALIZED;
+            return MessageType::NETWORK_ERR;
+        }
+
         uint8_t pipe_num;
         MessageType returnVal = MessageType::TX_NORMAL;
 
@@ -521,6 +538,11 @@ namespace RF24Network
 
     bool Network::available() const
     {
+        if (!initialized)
+        {
+            return false;
+        }
+
         return (nextFrame > frameQueue);
     }
 
@@ -659,7 +681,12 @@ namespace RF24Network
         /*------------------------------------------------
         Protect against invalid inputs
         ------------------------------------------------*/
-        if (!message || !len)
+        if (!initialized)
+        {
+            oopsies = ErrorType::NOT_INITIALIZED;
+            return false;
+        }
+        else if (!message || !len)
         {
             oopsies = ErrorType::INVALID_INPUTS;
             return false;
@@ -1040,7 +1067,7 @@ namespace RF24Network
         return (node & nodeMask) == logicalNodeAddress;
     }
 
-    void Network::setupAddress(void)
+    void Network::setupAddress()
     {
         /*------------------------------------------------
         First, establish the node mask

@@ -155,6 +155,11 @@ namespace RF24Network
         NETWORK_LAST_FRAGMENT = 150,
 
         /**
+        *   Signal that an error of some kind occurred.
+        */
+        NETWORK_ERR = 192,
+
+        /**
         *   Messages of this type are used internally, to signal the sender that a transmission has been completed.
         *   RF24Network does not directly have a built-in transport layer protocol, so message delivery is not 100%
         *   guaranteed. Messages can be lost via corrupted dynamic payloads, or a NETWORK_ACK can fail, while the
@@ -226,9 +231,12 @@ namespace RF24Network
     {
         NO_ERROR = 0,
         OK = NO_ERROR,
+        NOT_INITIALIZED,
         INVALID_ADDRESS,
         INVALID_INPUTS,
         RADIO_NOT_CONNECTED,
+        RADIO_PRE_INITIALIZED,
+        RADIO_FAILED_INIT,
 
     };
 }
