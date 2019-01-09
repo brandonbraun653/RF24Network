@@ -1,9 +1,17 @@
 /********************************************************************************
 *   RF24Network.hpp
-*       Interface for the RF24 Network Layer
+*       Implements the RF24 Network layer. Based on the work originally done by
+*       James Coliz on the popular RF24Network library:
+*       https://github.com/nRF24/RF24Network.
+*
+*       This version of the code attempts to make performance improvements, modernize
+*       the interface using modern C++, and abstract things further away from specific
+*       platforms. The common platform interface is from the Chimera library:
+*       https://github.com/brandonbraun653/Chimera
 *
 *   2019 | Brandon Braun | brandonbraun653@gmail.com
 ********************************************************************************/
+
 #pragma once
 #ifndef RF24NETWORK_HPP
 #define RF24NETWORK_HPP
@@ -410,6 +418,10 @@ namespace RF24Network
         };
 
         bool logicalToPhysicalAddress(logicalToPhysicalStruct *conversionInfo);
+
+        uint16_t levelToAddress(uint8_t level);
+
+        uint64_t pipeAddress(uint16_t node, uint8_t pipe);
 
         NRF24L::NRF24L01 &radio; /**< Underlying radio driver, provides link/physical layers */
 

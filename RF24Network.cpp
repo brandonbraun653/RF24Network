@@ -1,13 +1,6 @@
 /********************************************************************************
 *   RF24Network.cpp
-*       Implements the RF24 Network layer. Based on the work originally done by
-*       James Coliz on the popular RF24Network library:
-*       https://github.com/nRF24/RF24Network.
-*
-*       This version of the code attempts to make performance improvements, modernize
-*       the interface using modern C++, and abstract things further away from specific
-*       platforms. The common platform interface is from the Chimera library:
-*       https://github.com/brandonbraun653/Chimera
+*       Implementation of the NRF24 network layer.
 *
 *   2019 | Brandon Braun | brandonbraun653@gmail.com
 ********************************************************************************/
@@ -24,19 +17,10 @@
 #include "RF24NetworkDefinitions.hpp"
 
 using namespace NRF24L;
-using namespace Chimera;
 
 namespace RF24Network
 {
-    /**
-    *
-    */
-    static uint16_t levelToAddress(uint8_t level);
 
-    /**
-    *
-    */
-    static uint64_t pipeAddress(uint16_t node, uint8_t pipe);
 
 
     static constexpr uint16_t max_frame_payload_size = MAX_FRAME_SIZE - Header::SIZE;
@@ -184,7 +168,7 @@ namespace RF24Network
             frameSize = radio.getDynamicPayloadSize();
             if (frameSize < Header::SIZE)
             {
-                delayMilliseconds(10);
+                radio.delayMilliseconds(10);
                 continue;
             }
 
@@ -202,8 +186,8 @@ namespace RF24Network
             IF_SERIAL_DEBUG
             (
                 const uint16_t *i = reinterpret_cast<const uint16_t *>(frameBuffer + Header::SIZE);
-                printf("%lu: MAC Received on %u %s\n\r", millis(), pipe_num, header->toString());
-                printf("%lu: NET message %04x\n\r", millis(), *i);
+                printf("%lu: MAC Received on %u %s\n\r", radio.millis(), pipe_num, header->toString());
+                printf("%lu: NET message %04x\n\r", radio.millis(), *i);
             );
 
             /*------------------------------------------------
@@ -239,7 +223,7 @@ namespace RF24Network
                     {
                         header->toNode = requester;
                         writeDirect(header->toNode, MessageType::USER_TX_TO_PHYSICAL_ADDRESS);
-                        delayMilliseconds(10);
+                        radio.delayMilliseconds(10);
                         writeDirect(header->toNode, MessageType::USER_TX_TO_PHYSICAL_ADDRESS);
                         continue;
                     }
@@ -263,7 +247,7 @@ namespace RF24Network
                     ||  header->type == MessageType::NETWORK_ACK
                    )
                 {
-                    IF_SERIAL_DEBUG_ROUTING(printf("%lu MAC: System payload rcvd %d\n", millis(), returnVal););
+                    IF_SERIAL_DEBUG_ROUTING(printf("%lu MAC: System payload rcvd %d\n", radio.millis(), returnVal););
 
                     if (    header->type != MessageType::NETWORK_FIRST_FRAGMENT
                         &&  header->type != MessageType::NETWORK_MORE_FRAGMENTS
@@ -299,7 +283,7 @@ namespace RF24Network
                         {
                             header->toNode = header->fromNode;
                             header->fromNode = this->logicalNodeAddress;
-                            delayMilliseconds(parentPipe);
+                            radio.delayMilliseconds(parentPipe);
                             writeDirect(header->toNode, MessageType::USER_TX_TO_PHYSICAL_ADDRESS);
                         }
                         continue;
@@ -308,7 +292,7 @@ namespace RF24Network
 
                     if (multicastRelay)
                     {
-                        IF_SERIAL_DEBUG_ROUTING(printf("%u MAC: FWD multicast frame from 0%o to level %u\n", millis(), header->fromNode, multicast_level + 1););
+                        IF_SERIAL_DEBUG_ROUTING(printf("%u MAC: FWD multicast frame from 0%o to level %u\n", radio.millis(), header->fromNode, multicast_level + 1););
 
                         /*------------------------------------------------
                         For all but the first level of nodes (those not directly
@@ -316,10 +300,10 @@ namespace RF24Network
                         ------------------------------------------------*/
                         if ((this->logicalNodeAddress >> 3) != 0)
                         {
-                            delayMilliseconds(1);
+                            radio.delayMilliseconds(1);
                         }
 
-                        delayMilliseconds(this->logicalNodeAddress % 4);
+                        radio.delayMilliseconds(this->logicalNodeAddress % 4);
                         writeDirect(levelToAddress(multicastLevel) << 3, MessageType::USER_TX_MULTICAST);
                     }
 
@@ -345,7 +329,7 @@ namespace RF24Network
         bool result = false;
         uint16_t messageSize = frameSize - Header::SIZE;
 
-        IF_SERIAL_DEBUG(printf("%lu: NET Enqueue @%x ", millis(), nextFrame - frameQueue););
+        IF_SERIAL_DEBUG(printf("%lu: NET Enqueue @%x ", radio.millis(), nextFrame - frameQueue););
 
         bool isFragment =  (header->type == MessageType::NETWORK_FIRST_FRAGMENT)
                         || (header->type == MessageType::NETWORK_MORE_FRAGMENTS)
@@ -627,8 +611,8 @@ namespace RF24Network
                 IF_SERIAL_DEBUG
                 (
                     uint16_t len = maxlen;
-                    printf("%lu: NET message size %d\n", millis(), bufferSize);
-                    printf("%lu: NET r message ", millis());
+                    printf("%lu: NET message size %d\n", radio.millis(), bufferSize);
+                    printf("%lu: NET r message ", radio.millis());
                     const uint8_t *charPtr = reinterpret_cast<const uint8_t *>(message);
                     while (len--)
                     {
@@ -654,7 +638,7 @@ namespace RF24Network
             TODO: I think this is shifting the next frame to the top of the queue?
             ------------------------------------------------*/
             memmove(frameQueue, frameQueue + bufferSize + Frame::PREAMBLE_SIZE_Byte + padding, sizeof(frameQueue) - bufferSize);
-            IF_SERIAL_DEBUG(printf("%lu: NET Received %s\n\r", millis(), header.toString()););
+            IF_SERIAL_DEBUG(printf("%lu: NET Received %s\n\r", radio.millis(), header.toString()););
         }
 
         return bufferSize;
@@ -695,14 +679,13 @@ namespace RF24Network
         /*------------------------------------------------
         Allows time for requests (RF24Mesh) to get through between failed writes on busy nodes
         ------------------------------------------------*/
-        while (millis() - txTime < 25)
+        while (radio.millis() - txTime < 25)
         {
             if (update() > MessageType::MAX_USER_DEFINED_HEADER_TYPE)
             {
                 break;
             }
         }
-        delayMicroseconds(200);
 
         if (len <= max_frame_payload_size)
         {
@@ -712,14 +695,14 @@ namespace RF24Network
             {
                 return 1;
             }
-            txTime = millis();
+            txTime = radio.millis();
             return 0;
         }
 
         //Check payload size
         if (len > MAX_PAYLOAD_SIZE)
         {
-            IF_SERIAL_DEBUG(printf("%lu: NET write message failed. Given 'len' %u is bigger than the MAX Payload size %i\n\r", millis(), len, MAX_PAYLOAD_SIZE););
+            IF_SERIAL_DEBUG(printf("%lu: NET write message failed. Given 'len' %u is bigger than the MAX Payload size %i\n\r", radio.millis(), len, MAX_PAYLOAD_SIZE););
             return false;
         }
 
@@ -728,7 +711,7 @@ namespace RF24Network
 
         uint8_t msgCount = 0;
 
-        IF_SERIAL_DEBUG_FRAGMENTATION(printf("%lu: FRG Total message fragments %d\n\r", millis(), fragment_id););
+        IF_SERIAL_DEBUG_FRAGMENTATION(printf("%lu: FRG Total message fragments %d\n\r", radio.millis(), fragment_id););
 
         if (header.toNode != 0100)
         {
@@ -772,7 +755,7 @@ namespace RF24Network
 
             if (!ok)
             {
-                delayMilliseconds(2);
+                radio.delayMilliseconds(2);
                 ++retriesPerFrag;
             }
             else
@@ -784,12 +767,12 @@ namespace RF24Network
 
             if (!ok && retriesPerFrag >= 3)
             {
-                IF_SERIAL_DEBUG_FRAGMENTATION(printf("%lu: FRG TX with fragmentID '%d' failed after %d fragments. Abort.\n\r", millis(), fragment_id, msgCount););
+                IF_SERIAL_DEBUG_FRAGMENTATION(printf("%lu: FRG TX with fragmentID '%d' failed after %d fragments. Abort.\n\r", radio.millis(), fragment_id, msgCount););
                 break;
             }
 
             //Message was successful sent
-            IF_SERIAL_DEBUG_FRAGMENTATION_L2(printf("%lu: FRG message transmission with fragmentID '%d' sucessfull.\n\r", millis(), fragment_id););
+            IF_SERIAL_DEBUG_FRAGMENTATION_L2(printf("%lu: FRG message transmission with fragmentID '%d' sucessfull.\n\r", radio.millis(), fragment_id););
         }
         header.type = type;
 
@@ -807,10 +790,10 @@ namespace RF24Network
         }
 
         //Return true if all the chunks where sent successfully
-        IF_SERIAL_DEBUG_FRAGMENTATION(printf("%lu: FRG total message fragments sent %i. \n", millis(), msgCount););
+        IF_SERIAL_DEBUG_FRAGMENTATION(printf("%lu: FRG total message fragments sent %i. \n", radio.millis(), msgCount););
         if (fragment_id > 0)
         {
-            txTime = millis();
+            txTime = radio.millis();
             return false;
         }
 
@@ -828,7 +811,7 @@ namespace RF24Network
         Build the full frame to send
         ------------------------------------------------*/
         memcpy(frameBuffer, &header, Header::SIZE);
-        IF_SERIAL_DEBUG(printf("%lu: NET Sending %s\n\r", millis(), header.toString()););
+        IF_SERIAL_DEBUG(printf("%lu: NET Sending %s\n\r", radio.millis(), header.toString()););
 
         if (len)
         {
@@ -838,7 +821,7 @@ namespace RF24Network
                 uint16_t tmpLen = len;
                 const uint8_t *charPtr = reinterpret_cast<const uint8_t *>(message);
 
-                printf("%lu: NET message ", millis());
+                printf("%lu: NET message ", radio.millis());
                 while (tmpLen--)
                 {
                     printf("%02x ", charPtr[tmpLen]);
@@ -890,14 +873,14 @@ namespace RF24Network
         logicalToPhysicalStruct conversion = {toNode, static_cast<uint8_t>(directTo), 0};
         logicalToPhysicalAddress(&conversion);
 
-        IF_SERIAL_DEBUG(printf("%lu: MAC Sending to 0%o via 0%o on pipe %x\n\r", millis(), toNode, conversion.send_node, conversion.send_pipe););
+        IF_SERIAL_DEBUG(printf("%lu: MAC Sending to 0%o via 0%o on pipe %x\n\r", radio.millis(), toNode, conversion.send_node, conversion.send_pipe););
 
         /**Write it*/
         ok = writeToPipe(conversion.send_node, conversion.send_pipe, conversion.multicast);
 
         if (!ok)
         {
-            IF_SERIAL_DEBUG_ROUTING(printf("%lu: MAC Send fail to 0%o via 0%o on pipe %x\n\r", millis(), toNode, conversion.send_node, conversion.send_pipe););
+            IF_SERIAL_DEBUG_ROUTING(printf("%lu: MAC Send fail to 0%o via 0%o on pipe %x\n\r", radio.millis(), toNode, conversion.send_node, conversion.send_pipe););
         }
 
         if (    ok
@@ -920,7 +903,7 @@ namespace RF24Network
             frameSize = Header::SIZE;
             writeToPipe(conversion.send_node, conversion.send_pipe, conversion.multicast);
 
-            IF_SERIAL_DEBUG_ROUTING(printf("%lu MAC: Route OK to 0%o ACK sent to 0%o\n", millis(), toNode, header->fromNode););
+            IF_SERIAL_DEBUG_ROUTING(printf("%lu MAC: Route OK to 0%o ACK sent to 0%o\n", radio.millis(), toNode, header->fromNode););
         }
 
         if (    ok
@@ -938,13 +921,13 @@ namespace RF24Network
             }
             radio.startListening();
 
-            uint32_t reply_time = millis();
+            uint32_t reply_time = radio.millis();
 
             while (update() != MessageType::NETWORK_ACK)
             {
-                if (millis() - reply_time > routeTimeout)
+                if (radio.millis() - reply_time > routeTimeout)
                 {
-                    IF_SERIAL_DEBUG_ROUTING(printf("%lu: MAC Network ACK fail from 0%o via 0%o on pipe %x\n\r", millis(), toNode, conversion.send_node, conversion.send_pipe););
+                    IF_SERIAL_DEBUG_ROUTING(printf("%lu: MAC Network ACK fail from 0%o via 0%o on pipe %x\n\r", radio.millis(), toNode, conversion.send_node, conversion.send_pipe););
                     ok = false;
                     break;
                 }
@@ -1160,7 +1143,7 @@ namespace RF24Network
         radio.openReadPipe(0, pipeAddress(levelToAddress(level), 0));
     }
 
-    static uint16_t levelToAddress(uint8_t level)
+    uint16_t Network::levelToAddress(uint8_t level)
     {
         uint16_t levelAddr = 1;
         if (level)
@@ -1174,7 +1157,7 @@ namespace RF24Network
         return levelAddr;
     }
 
-    static uint64_t pipeAddress(uint16_t node, uint8_t pipe)
+    uint64_t Network::pipeAddress(uint16_t node, uint8_t pipe)
     {
         static uint8_t address_translation[] = {0xc3, 0x3c, 0x33, 0xce, 0x3e, 0xe3, 0xec};
         uint64_t result = 0xCCCCCCCCCCLL;
@@ -1210,7 +1193,7 @@ namespace RF24Network
         IF_SERIAL_DEBUG
         (
             uint32_t *top = reinterpret_cast<uint32_t *>(out + 1);
-            printf("%lu: NET Pipe %i on node 0%o has address %lx%x\n\r", millis(), pipe, node, *top, *out);
+            printf("%lu: NET Pipe %i on node 0%o has address %lx%x\n\r", radio.millis(), pipe, node, *top, *out);
         );
 
         return result;
