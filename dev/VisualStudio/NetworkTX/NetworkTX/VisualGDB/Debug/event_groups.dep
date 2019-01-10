@@ -1,0 +1,104 @@
+VisualGDB/Debug/event_groups.o: \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/event_groups.c \
+ C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\stdlib.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\ieeefp.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\_ansi.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\newlib.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\config.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\features.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\_newlib_version.h \
+ c:\sysgcc\arm-eabi\lib\gcc\arm-eabi\7.2.0\include\stddef.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\reent.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\_ansi.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_types.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\_types.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\_default_types.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\lock.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\cdefs.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\stdlib.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/FreeRTOS.h \
+ c:\sysgcc\arm-eabi\lib\gcc\arm-eabi\7.2.0\include\stdint.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\stdint.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_intsup.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_stdint.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/config/stm32/FreeRTOSConfig.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/projdefs.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/portable.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/deprecated_definitions.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/portable/GCC/ARM_CM7/r0p1/portmacro.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/mpu_wrappers.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/task.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/list.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/timers.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/task.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/event_groups.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/timers.h
+
+C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\stdlib.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\ieeefp.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\_ansi.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\newlib.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\config.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\features.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\_newlib_version.h:
+
+c:\sysgcc\arm-eabi\lib\gcc\arm-eabi\7.2.0\include\stddef.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\reent.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\_ansi.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_types.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\_types.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\_default_types.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\lock.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\cdefs.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\stdlib.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/FreeRTOS.h:
+
+c:\sysgcc\arm-eabi\lib\gcc\arm-eabi\7.2.0\include\stdint.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\stdint.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_intsup.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_stdint.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/config/stm32/FreeRTOSConfig.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/projdefs.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/portable.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/deprecated_definitions.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/portable/GCC/ARM_CM7/r0p1/portmacro.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/mpu_wrappers.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/task.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/list.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/timers.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/task.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/event_groups.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/timers.h:

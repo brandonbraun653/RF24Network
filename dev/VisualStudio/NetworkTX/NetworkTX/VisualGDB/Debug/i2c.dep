@@ -1,0 +1,5 @@
+VisualGDB/Debug/i2c.o: \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/source/i2c.cpp \
+ C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h
+
+C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h:

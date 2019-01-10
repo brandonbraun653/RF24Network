@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkTX", "NetworkTX\NetworkTX.vcxproj", "{777AB6F7-58EA-4D41-8BBD-8340ECB6184C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|VisualGDB = Debug|VisualGDB
+		Release|VisualGDB = Release|VisualGDB
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{777AB6F7-58EA-4D41-8BBD-8340ECB6184C}.Debug|VisualGDB.ActiveCfg = Debug|VisualGDB
+		{777AB6F7-58EA-4D41-8BBD-8340ECB6184C}.Debug|VisualGDB.Build.0 = Debug|VisualGDB
+		{777AB6F7-58EA-4D41-8BBD-8340ECB6184C}.Release|VisualGDB.ActiveCfg = Release|VisualGDB
+		{777AB6F7-58EA-4D41-8BBD-8340ECB6184C}.Release|VisualGDB.Build.0 = Release|VisualGDB
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {181B5F8A-AFD8-4DB7-92A8-A02258C312B9}
+	EndGlobalSection
+EndGlobal

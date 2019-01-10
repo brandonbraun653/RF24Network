@@ -1,0 +1,8 @@
+VisualGDB/Debug/gdb.o: \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/source/gdb.cpp \
+ C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/gdb.hpp
+
+C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/gdb.hpp:

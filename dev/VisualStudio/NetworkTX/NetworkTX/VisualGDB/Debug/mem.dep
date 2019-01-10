@@ -1,0 +1,107 @@
+VisualGDB/Debug/mem.o: \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/source/mem.cpp \
+ C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/mem.hpp \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/config.hpp \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/preprocessor.hpp \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/FreeRTOS.h \
+ c:\sysgcc\arm-eabi\lib\gcc\arm-eabi\7.2.0\include\stddef.h \
+ c:\sysgcc\arm-eabi\lib\gcc\arm-eabi\7.2.0\include\stdint.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\stdint.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\_default_types.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\features.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\_newlib_version.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_intsup.h \
+ c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_stdint.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/config/stm32/FreeRTOSConfig.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/projdefs.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/portable.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/deprecated_definitions.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/portable/GCC/ARM_CM7/r0p1/portmacro.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/mpu_wrappers.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/portable.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\new \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\arm-eabi\thumb\fpu\cortex_m7\bits\c++config.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\arm-eabi\thumb\fpu\cortex_m7\bits\os_defines.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\arm-eabi\thumb\fpu\cortex_m7\bits\cpu_defines.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\exception \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\exception.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\exception_ptr.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\exception_defines.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\cxxabi_init_exception.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\typeinfo \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\hash_bytes.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\nested_exception.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\move.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\concept_check.h \
+ c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\type_traits
+
+C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/mem.hpp:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/config.hpp:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/preprocessor.hpp:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/FreeRTOS.h:
+
+c:\sysgcc\arm-eabi\lib\gcc\arm-eabi\7.2.0\include\stddef.h:
+
+c:\sysgcc\arm-eabi\lib\gcc\arm-eabi\7.2.0\include\stdint.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\stdint.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\machine\_default_types.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\features.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\_newlib_version.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_intsup.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\sys-include\sys\_stdint.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/config/stm32/FreeRTOSConfig.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/projdefs.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/portable.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/deprecated_definitions.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/portable/GCC/ARM_CM7/r0p1/portmacro.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/mpu_wrappers.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/lib/FreeRTOS/include/portable.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\new:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\arm-eabi\thumb\fpu\cortex_m7\bits\c++config.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\arm-eabi\thumb\fpu\cortex_m7\bits\os_defines.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\arm-eabi\thumb\fpu\cortex_m7\bits\cpu_defines.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\exception:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\exception.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\exception_ptr.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\exception_defines.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\cxxabi_init_exception.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\typeinfo:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\hash_bytes.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\nested_exception.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\move.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\bits\concept_check.h:
+
+c:\sysgcc\arm-eabi\arm-eabi\include\c++\7.2.0\type_traits:

@@ -1,0 +1,8 @@
+VisualGDB/Debug/rpc.o: \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/source/rpc.cpp \
+ C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h \
+ D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/rpc.hpp
+
+C:/Users/brand/AppData/Local/VisualGDB/EmbeddedEFPs/Profiler/ProfilerFreeRTOSHooks.h:
+
+D:/git/Microcontrollers/Thor_STM32/Thor/Thor/include/rpc.hpp:
