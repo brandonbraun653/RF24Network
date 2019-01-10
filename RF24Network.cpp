@@ -21,8 +21,6 @@ using namespace NRF24L;
 namespace RF24Network
 {
 
-
-
     static constexpr uint16_t max_frame_payload_size = MAX_FRAME_SIZE - Header::SIZE;
 
 
@@ -212,7 +210,7 @@ namespace RF24Network
                 {
                     continue;
                 }
-
+                
                 /*------------------------------------------------
 
                 ------------------------------------------------*/
