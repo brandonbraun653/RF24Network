@@ -1,5 +1,8 @@
 /********************************************************************************
-*   RF24Network.hpp
+*   File Name:
+*       RF24Network.hpp
+*
+*   Description:
 *       Implements the RF24 Network layer. Based on the work originally done by
 *       James Coliz on the popular RF24Network library:
 *       https://github.com/nRF24/RF24Network.
@@ -37,7 +40,19 @@ namespace RF24Network
     {
     public:
         /**
-        *   Send constructor
+        *   Constructor
+        *
+        *   @param[in]  to      The Octal format, logical node address where the message is going
+        *   @param[in]  type    The type of message
+        */
+        Header(uint16_t to, uint8_t type = static_cast<uint8_t>(MessageType::TX_NORMAL))
+        {
+            this->toNode = to;
+            this->type = type;
+        }
+
+        /**
+        *   Alternate constructor
         *
         *   @param[in]  to      The Octal format, logical node address where the message is going
         *   @param[in]  type    The type of message
@@ -45,7 +60,7 @@ namespace RF24Network
         Header(uint16_t to, MessageType type = MessageType::TX_NORMAL)
         {
             this->toNode = to;
-            this->type = type;
+            this->type = static_cast<uint8_t>(type);
         }
 
         Header() = default;
@@ -59,10 +74,10 @@ namespace RF24Network
         */
         const char *toString() const;
 
-        uint16_t id;       /**< Sequential message ID, incremented every time a new frame is constructed */
-        uint16_t toNode;   /**< Logical address where the message is going */
-        uint16_t fromNode; /**< Logical address where the message was generated */
-        MessageType type;  /**< Message type for the header */
+        uint16_t id;        /**< Sequential message ID, incremented every time a new frame is constructed */
+        uint16_t toNode;    /**< Logical address where the message is going */
+        uint16_t fromNode;  /**< Logical address where the message was generated */
+        uint8_t type;       /**< Message type for the header */
 
         /**
         *   During fragmentation, it carries the fragment_id, and on the last fragment
@@ -169,6 +184,7 @@ namespace RF24Network
         *   @return True if the setup was successful, false if not
         */
         bool begin(const uint8_t channel, const uint16_t nodeAddress,
+                   const NRF24L::DataRate dataRate = NRF24L::DataRate::DR_1MBPS,
                    const NRF24L::PowerAmplitude pwr = NRF24L::PowerAmplitude::MAX);
 
         /**
@@ -301,11 +317,24 @@ namespace RF24Network
         bool isValidNetworkAddress(const uint16_t node);
 
         /**
+        *   Changes the network's address at runtime
+        *
+        *   @param[in]  address     The address to be set
+        *   @return True if the address was valid and set correctly, false if not
+        */
+        bool setAddress(const uint16_t address);
+
+        /**
         *   This node's parent address
         *
         *   @return This node's parent address, or -1 if this is the base
         */
         uint16_t parent() const;
+
+        /**
+        *   Provided a node address and a pipe number, will return the RF24Network address of that child pipe for that node
+        */
+        uint16_t addressOfPipe(uint16_t node, uint8_t pipeNo);
 
         /**
         *   Enabling this will allow this node to automatically forward received multicast frames to the next highest
@@ -332,11 +361,6 @@ namespace RF24Network
         *   utilize this value.
         */
         uint16_t routeTimeout; /**< Timeout for routed payloads */
-
-        /**
-        *   Provided a node address and a pipe number, will return the RF24Network address of that child pipe for that node
-        */
-        uint16_t addressOfPipe(uint16_t node, uint8_t pipeNo);
 
         /**
         * The raw system frame buffer of received data.
@@ -379,8 +403,7 @@ namespace RF24Network
         *   |       FLAGS       |   Value  | Description                                                                                                |
         *   |-------------------|----------|------------------------------------------------------------------------------------------------------------|
         *   |FLAG_HOLD_INCOMING | 1(bit_1) | INTERNAL: Set automatically when a fragmented payload will exceed the available cache
-        *   |FLAG_BYPASS_HOLDS  | 2(bit_2) | EXTERNAL: Can be used to prevent holds from blocking. Note: Holds are disabled & re-enabled by RF24Mesh
-        *   |                   |          |           when renewing addresses. This will cause data loss if incoming data exceeds the available cache space.
+        *   |FLAG_BYPASS_HOLDS  | 2(bit_2) | EXTERNAL: Can be used to prevent holds from blocking. Note: Holds are disabled & re-enabled by RF24Mesh when renewing addresses. This will cause data loss if incoming data exceeds the available cache space.
         *   |FLAG_FAST_FRAG     | 4(bit_3) | INTERNAL: Replaces the fastFragTransfer variable, and allows for faster transfers between directly connected nodes.
         *   |FLAG_NO_POLL       | 8(bit_4) | EXTERNAL/USER: Disables NETWORK_POLL responses on a node-by-node basis.
         *
@@ -408,7 +431,7 @@ namespace RF24Network
 
         uint16_t directChildRouteTo(uint16_t node);
         void setupAddress(void);
-        bool _write(Header &header, const void *message, uint16_t len, uint16_t directTo);
+        bool _write(Header &header, const void *const message, const uint16_t len, const uint16_t directTo);
 
         struct logicalToPhysicalStruct
         {

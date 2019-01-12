@@ -1,5 +1,8 @@
 /********************************************************************************
-*   RF24NetworkDefinitions.hpp
+*   File Name:
+*       RF24NetworkDefinitions.hpp
+*
+*   Description:
 *       Provides definitions for the network data types and allows the user to
 *       configure the runtime behavior and properties of the system as a whole.
 *
@@ -24,6 +27,7 @@ namespace RF24Network
     *   The default network address
     */
     constexpr uint16_t DEFAULT_ADDRESS = 04444;
+    constexpr uint8_t OCTAL_TO_BIN_BITSHIFT = 3u;
 
     /*------------------------------------------------
     Config Options
@@ -62,36 +66,37 @@ namespace RF24Network
     //#define SERIAL_DEBUG_FRAGMENTATION
     //#define SERIAL_DEBUG_FRAGMENTATION_L2
 
+#if defined(SERIAL_DEBUG)
+#define IF_SERIAL_DEBUG(x) ({ x; })
+#else
+#define IF_SERIAL_DEBUG(x)
+#endif
 
-    #if defined(SERIAL_DEBUG)
-    #define IF_SERIAL_DEBUG(x) ({ x; })
-    #else
-    #define IF_SERIAL_DEBUG(x)
-    #endif
+#if defined(SERIAL_DEBUG_MINIMAL)
+#define IF_SERIAL_DEBUG_MINIMAL(x) ({ x; })
+#else
+#define IF_SERIAL_DEBUG_MINIMAL(x)
+#endif
 
-    #if defined(SERIAL_DEBUG_MINIMAL)
-    #define IF_SERIAL_DEBUG_MINIMAL(x) ({ x; })
-    #else
-    #define IF_SERIAL_DEBUG_MINIMAL(x)
-    #endif
+#if defined(SERIAL_DEBUG_FRAGMENTATION)
+#define IF_SERIAL_DEBUG_FRAGMENTATION(x) ({ x; })
+#else
+#define IF_SERIAL_DEBUG_FRAGMENTATION(x)
+#endif
 
-    #if defined(SERIAL_DEBUG_FRAGMENTATION)
-    #define IF_SERIAL_DEBUG_FRAGMENTATION(x) ({ x; })
-    #else
-    #define IF_SERIAL_DEBUG_FRAGMENTATION(x)
-    #endif
+#if defined(SERIAL_DEBUG_FRAGMENTATION_L2)
+#define IF_SERIAL_DEBUG_FRAGMENTATION_L2(x) ({ x; })
+#else
+#define IF_SERIAL_DEBUG_FRAGMENTATION_L2(x)
+#endif
 
-    #if defined(SERIAL_DEBUG_FRAGMENTATION_L2)
-    #define IF_SERIAL_DEBUG_FRAGMENTATION_L2(x) ({ x; })
-    #else
-    #define IF_SERIAL_DEBUG_FRAGMENTATION_L2(x)
-    #endif
+#if defined(SERIAL_DEBUG_ROUTING)
+#define IF_SERIAL_DEBUG_ROUTING(x) ({ x; })
+#else
+#define IF_SERIAL_DEBUG_ROUTING(x)
+#endif
 
-    #if defined(SERIAL_DEBUG_ROUTING)
-    #define IF_SERIAL_DEBUG_ROUTING(x) ({ x; })
-    #else
-    #define IF_SERIAL_DEBUG_ROUTING(x)
-    #endif
+    constexpr uint16_t MULTICAST_NODE = 0100;
 
     /** System Network Message Types
     *
@@ -109,6 +114,8 @@ namespace RF24Network
         USER_TX_TO_LOGICAL_ADDRESS = 3,
         USER_TX_MULTICAST = 4,
 
+        M = 7,
+
         MAX_USER_DEFINED_HEADER_TYPE = 127,
 
         /**
@@ -123,6 +130,8 @@ namespace RF24Network
         *   and forward it back to the requester.
         */
         NETWORK_ADDR_RESPONSE = 128,
+
+        MESH_ADDR_CONFIRM = 129,
 
         /**
         *   Messages of type NETWORK_PING will be dropped automatically by the recipient. A NETWORK_ACK
@@ -193,6 +202,10 @@ namespace RF24Network
         */
         NETWORK_REQ_ADDRESS = 195,
 
+        MESH_ADDR_LOOKUP = 196,
+        MESH_ADDR_RELEASE = 197,
+        MESH_ID_LOOKUP = 198,
+
         /**
         *   Not sure what this one does yet.
         */
@@ -209,7 +222,7 @@ namespace RF24Network
     */
     enum class FlagType : uint8_t
     {
-        HOLD_INCOMING = 1,
+        HOLD_INCOMING = (1u << 0),
 
         /**
         *   FLAG_BYPASS_HOLDS is mainly for use with RF24Mesh as follows:
@@ -219,9 +232,9 @@ namespace RF24Network
         *       d: Address renewal takes place and is set
         *       e: Holds Enabled (bypass flag off)
         */
-        BYPASS_HOLDS = 2,
-        FAST_FRAG = 4,
-        NO_POLL = 8,
+        BYPASS_HOLDS = (1u << 1),
+        FAST_FRAG = (1u << 2),
+        NO_POLL = (1u << 3),
     };
 
     /**

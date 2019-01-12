@@ -44,7 +44,10 @@ namespace RF24Network
         multicastRelay = 0;
     }
 
-    bool Network::begin(const uint8_t channel, const uint16_t nodeAddress, const NRF24L::PowerAmplitude pwr)
+    bool Network::begin(const uint8_t channel,
+                        const uint16_t nodeAddress,
+                        const NRF24L::DataRate dataRate,
+                        const NRF24L::PowerAmplitude pwr)
     {
         /*------------------------------------------------
         Check error conditions that would prevent a solid startup.
@@ -93,6 +96,7 @@ namespace RF24Network
 
         initialized &= radio.setChannel(channel);
         initialized &= radio.setPALevel(pwr);
+        initialized &= radio.setDataRate(dataRate);
         initialized &= radio.setAutoAck(0, false);
 
         #if RF24Network_ENABLE_DYNAMIC_PAYLOADS
@@ -126,7 +130,7 @@ namespace RF24Network
     {
         if (!initialized)
         {
-            IF_SERIAL_DEBUG(printf("NET: Not initialized\r\n"););
+            IF_SERIAL_DEBUG(printf("%lu: NET Not initialized\r\n", radio.millis()););
             oopsies = ErrorType::NOT_INITIALIZED;
             return MessageType::NETWORK_ERR;
         }
@@ -196,7 +200,7 @@ namespace RF24Network
                 continue;
             }
 
-            returnVal = header->type;
+            returnVal = static_cast<MessageType>(header->type);
 
             /*------------------------------------------------
             Is this message for us?
@@ -206,15 +210,15 @@ namespace RF24Network
                 /*------------------------------------------------
                 No action required for this one
                 ------------------------------------------------*/
-                if (header->type == MessageType::NETWORK_PING)
+                if (header->type == static_cast<uint8_t>(MessageType::NETWORK_PING))
                 {
                     continue;
                 }
-                
+
                 /*------------------------------------------------
 
                 ------------------------------------------------*/
-                if (header->type == MessageType::NETWORK_ADDR_RESPONSE)
+                if (header->type == static_cast<uint8_t>(MessageType::NETWORK_ADDR_RESPONSE))
                 {
                     uint16_t requester = DEFAULT_ADDRESS;
                     if (requester != this->logicalNodeAddress)
@@ -230,7 +234,7 @@ namespace RF24Network
                 /*------------------------------------------------
 
                 ------------------------------------------------*/
-                if (header->type == MessageType::NETWORK_REQ_ADDRESS && this->logicalNodeAddress)
+                if (header->type == static_cast<uint8_t>(MessageType::NETWORK_REQ_ADDRESS) && this->logicalNodeAddress)
                 {
                     header->fromNode = this->logicalNodeAddress;
                     header->toNode = 0;
@@ -241,17 +245,17 @@ namespace RF24Network
                 /*------------------------------------------------
 
                 ------------------------------------------------*/
-                if (    (returnSysMsgs && (header->type > MessageType::MAX_USER_DEFINED_HEADER_TYPE))
-                    ||  header->type == MessageType::NETWORK_ACK
+                if (    (returnSysMsgs && (header->type > static_cast<uint8_t>(MessageType::MAX_USER_DEFINED_HEADER_TYPE)))
+                    ||  header->type == static_cast<uint8_t>(MessageType::NETWORK_ACK)
                    )
                 {
                     IF_SERIAL_DEBUG_ROUTING(printf("%lu MAC: System payload rcvd %d\n", radio.millis(), returnVal););
 
-                    if (    header->type != MessageType::NETWORK_FIRST_FRAGMENT
-                        &&  header->type != MessageType::NETWORK_MORE_FRAGMENTS
-                        &&  header->type != MessageType::NETWORK_MORE_FRAGMENTS_NACK
-                        &&  header->type != MessageType::EXTERNAL_DATA_TYPE
-                        &&  header->type != MessageType::NETWORK_LAST_FRAGMENT
+                    if (    header->type != static_cast<uint8_t>(MessageType::NETWORK_FIRST_FRAGMENT)
+                        &&  header->type != static_cast<uint8_t>(MessageType::NETWORK_MORE_FRAGMENTS)
+                        &&  header->type != static_cast<uint8_t>(MessageType::NETWORK_MORE_FRAGMENTS_NACK)
+                        &&  header->type != static_cast<uint8_t>(MessageType::EXTERNAL_DATA_TYPE)
+                        &&  header->type != static_cast<uint8_t>(MessageType::NETWORK_LAST_FRAGMENT)
                        )
                     {
                         return returnVal;
@@ -271,9 +275,9 @@ namespace RF24Network
                 /*------------------------------------------------
                 Handle a multicast scenario
                 ------------------------------------------------*/
-                if (header->toNode == 0100)
+                if (header->toNode == MULTICAST_NODE)
                 {
-                    if (header->type == MessageType::NETWORK_POLL)
+                    if (header->type == static_cast<uint8_t>(MessageType::NETWORK_POLL))
                     {
                         if (    !(networkFlags & static_cast<uint8_t>(FlagType::NO_POLL)
                             &&  this->logicalNodeAddress != DEFAULT_ADDRESS)
@@ -290,7 +294,7 @@ namespace RF24Network
 
                     if (multicastRelay)
                     {
-                        IF_SERIAL_DEBUG_ROUTING(printf("%u MAC: FWD multicast frame from 0%o to level %u\n", radio.millis(), header->fromNode, multicast_level + 1););
+                        IF_SERIAL_DEBUG_ROUTING(printf("%u: MAC FWD multicast frame from 0%o to level %u\n", radio.millis(), header->fromNode, multicast_level + 1););
 
                         /*------------------------------------------------
                         For all but the first level of nodes (those not directly
@@ -329,10 +333,10 @@ namespace RF24Network
 
         IF_SERIAL_DEBUG(printf("%lu: NET Enqueue @%x ", radio.millis(), nextFrame - frameQueue););
 
-        bool isFragment =  (header->type == MessageType::NETWORK_FIRST_FRAGMENT)
-                        || (header->type == MessageType::NETWORK_MORE_FRAGMENTS)
-                        || (header->type == MessageType::NETWORK_LAST_FRAGMENT)
-                        || (header->type == MessageType::NETWORK_MORE_FRAGMENTS_NACK);
+        bool isFragment =  (header->type == static_cast<uint8_t>(MessageType::NETWORK_FIRST_FRAGMENT))
+                        || (header->type == static_cast<uint8_t>(MessageType::NETWORK_MORE_FRAGMENTS))
+                        || (header->type == static_cast<uint8_t>(MessageType::NETWORK_LAST_FRAGMENT))
+                        || (header->type == static_cast<uint8_t>(MessageType::NETWORK_MORE_FRAGMENTS_NACK));
 
         if (isFragment)
         {
@@ -340,7 +344,7 @@ namespace RF24Network
             /*------------------------------------------------
             This is the first fragment of many!
             ------------------------------------------------*/
-            if (header->type == MessageType::NETWORK_FIRST_FRAGMENT)
+            if (header->type == static_cast<uint8_t>(MessageType::NETWORK_FIRST_FRAGMENT))
             {
                 // Drop frames exceeding max size and duplicates (MAX_PAYLOAD_SIZE needs to be divisible by 24)
                 if (header->reserved > (uint16_t(MAX_PAYLOAD_SIZE) / max_frame_payload_size))
@@ -384,9 +388,9 @@ namespace RF24Network
             /*------------------------------------------------
             More fragments || last fragment!
             ------------------------------------------------*/
-            else if(    (header->type == MessageType::NETWORK_LAST_FRAGMENT)
-                    ||  (header->type == MessageType::NETWORK_MORE_FRAGMENTS)
-                    ||  (header->type == MessageType::NETWORK_MORE_FRAGMENTS_NACK)
+            else if(    (header->type == static_cast<uint8_t>(MessageType::NETWORK_LAST_FRAGMENT))
+                    ||  (header->type == static_cast<uint8_t>(MessageType::NETWORK_MORE_FRAGMENTS))
+                    ||  (header->type == static_cast<uint8_t>(MessageType::NETWORK_MORE_FRAGMENTS_NACK))
                    )
             {
                 /*------------------------------------------------
@@ -403,7 +407,7 @@ namespace RF24Network
 
                 ------------------------------------------------*/
                 if (    (fragQueue.header.reserved == 0)
-                    ||  (header->type != MessageType::NETWORK_LAST_FRAGMENT && header->reserved != fragQueue.header.reserved)
+                    ||  ((header->type != static_cast<uint8_t>(MessageType::NETWORK_LAST_FRAGMENT)) && (header->reserved != fragQueue.header.reserved))
                     ||  (fragQueue.header.id != header->id)
                    )
                 {
@@ -420,7 +424,7 @@ namespace RF24Network
                 /*------------------------------------------------
 
                 ------------------------------------------------*/
-                if (header->type != MessageType::NETWORK_LAST_FRAGMENT)
+                if (header->type != static_cast<uint8_t>(MessageType::NETWORK_LAST_FRAGMENT))
                 {
                     --fragQueue.header.reserved;
                     return true;
@@ -428,7 +432,7 @@ namespace RF24Network
 
 
                 fragQueue.header.reserved = 0;
-                fragQueue.header.type = static_cast<MessageType>(header->reserved);
+                fragQueue.header.type = header->reserved;
 
                 IF_SERIAL_DEBUG_FRAGMENTATION(printf("fq 3: %d\n", frag_queue.messageSize););
                 IF_SERIAL_DEBUG_FRAGMENTATION_L2
@@ -440,7 +444,7 @@ namespace RF24Network
                 );
 
                 //Frame assembly complete, copy to main buffer if OK
-                if (fragQueue.header.type == MessageType::EXTERNAL_DATA_TYPE)
+                if (fragQueue.header.type == static_cast<uint8_t>(MessageType::EXTERNAL_DATA_TYPE))
                 {
                     return static_cast<uint8_t>(MessageType::USER_TX_TO_PHYSICAL_ADDRESS);
                 }
@@ -473,7 +477,7 @@ namespace RF24Network
         ------------------------------------------------*/
         else
         {
-            if (header->type == MessageType::EXTERNAL_DATA_TYPE)
+            if (header->type == static_cast<uint8_t>(MessageType::EXTERNAL_DATA_TYPE))
             {
                 memcpy(&fragQueue, &frameBuffer, 8);
                 fragQueue.messageBuffer = frameBuffer + Header::SIZE;
@@ -647,7 +651,7 @@ namespace RF24Network
         /*------------------------------------------------
         Fill out the header
         ------------------------------------------------*/
-        header.toNode = 0100; /** TODO: What does this number mean?? It's not master...000 */
+        header.toNode = MULTICAST_NODE;
         header.fromNode = this->logicalNodeAddress;
 
         return write(header, message, len, levelToAddress(level));
@@ -666,11 +670,7 @@ namespace RF24Network
         if (!initialized)
         {
             oopsies = ErrorType::NOT_INITIALIZED;
-            return false;
-        }
-        else if (!message || !len)
-        {
-            oopsies = ErrorType::INVALID_INPUTS;
+            IF_SERIAL_DEBUG(printf("%lu: ERR Not initialized\r\n", radio.millis()););
             return false;
         }
 
@@ -718,7 +718,7 @@ namespace RF24Network
         }
 
         uint8_t retriesPerFrag = 0;
-        MessageType type = header.type;
+        uint8_t type = header.type;
         bool ok = 0;
 
         while (fragment_id > 0)
@@ -729,18 +729,18 @@ namespace RF24Network
 
             if (fragment_id == 1)
             {
-                header.type = MessageType::NETWORK_LAST_FRAGMENT; //Set the last fragment flag to indicate the last fragment
+                header.type = static_cast<uint8_t>(MessageType::NETWORK_LAST_FRAGMENT); //Set the last fragment flag to indicate the last fragment
                 header.reserved = static_cast<uint8_t>(type);              //The reserved field is used to transmit the header type
             }
             else
             {
                 if (msgCount == 0)
                 {
-                    header.type = MessageType::NETWORK_FIRST_FRAGMENT;
+                    header.type = static_cast<uint8_t>(MessageType::NETWORK_FIRST_FRAGMENT);
                 }
                 else
                 {
-                    header.type = MessageType::NETWORK_MORE_FRAGMENTS; //Set the more fragments flag to indicate a fragmented frame
+                    header.type = static_cast<uint8_t>(MessageType::NETWORK_MORE_FRAGMENTS); //Set the more fragments flag to indicate a fragmented frame
                 }
             }
 
@@ -798,7 +798,7 @@ namespace RF24Network
         return true;
     }
 
-    bool Network::_write(Header &header, const void *message, uint16_t len, uint16_t directTo)
+    bool Network::_write(Header &header, const void *const message, const uint16_t len, const uint16_t directTo)
     {
         /*------------------------------------------------
         Fill out the header
@@ -889,7 +889,7 @@ namespace RF24Network
         {
 
             Header *header = (Header *)&frameBuffer;
-            header->type = MessageType::NETWORK_ACK;          // Set the payload type to NETWORK_ACK
+            header->type = static_cast<uint8_t>(MessageType::NETWORK_ACK);          // Set the payload type to NETWORK_ACK
             header->toNode = header->fromNode; // Change the 'to' address to the 'from' address
 
             conversion.send_node = header->fromNode;
@@ -1058,7 +1058,7 @@ namespace RF24Network
 
         while (this->logicalNodeAddress & node_mask_check)
         {
-            node_mask_check <<= 3;
+            node_mask_check <<= OCTAL_TO_BIN_BITSHIFT;
             count++;
         }
         multicastLevel = count;
@@ -1068,7 +1068,7 @@ namespace RF24Network
         /*------------------------------------------------
         Parent mask is the next level down
         ------------------------------------------------*/
-        uint16_t parent_mask = nodeMask >> 3;
+        uint16_t parent_mask = nodeMask >> OCTAL_TO_BIN_BITSHIFT;
 
         /*------------------------------------------------
         Parent node is the part IN the mask
@@ -1083,8 +1083,8 @@ namespace RF24Network
 
         while (m)
         {
-            i >>= 3;
-            m >>= 3;
+            i >>= OCTAL_TO_BIN_BITSHIFT;
+            m >>= OCTAL_TO_BIN_BITSHIFT;
         }
         parentPipe = i;
 
@@ -1133,6 +1133,49 @@ namespace RF24Network
         }
 
         return result;
+    }
+
+    bool Network::setAddress(const uint16_t address)
+    {
+        if(isValidNetworkAddress(address))
+        {
+            bool initialized = true;
+            this->logicalNodeAddress = address;
+
+            /*------------------------------------------------
+            Make sure we can't receive any data
+            ------------------------------------------------*/
+            radio.stopListening();
+
+            /*------------------------------------------------
+            Close all the previously opened pipes
+            ------------------------------------------------*/
+            for (uint8_t i = 0; i < MAX_NUM_PIPES; i++)
+            {
+                radio.closeReadPipe(i);
+            }
+
+            /*------------------------------------------------
+            Re-setup the address helper cache
+            ------------------------------------------------*/
+            setupAddress();
+
+            /*------------------------------------------------
+            Open all the listening pipes
+            ------------------------------------------------*/
+            for (uint8_t i = 0; i < MAX_NUM_PIPES; i++)
+            {
+                initialized &= radio.openReadPipe(i, pipeAddress(address, i));
+            }
+            radio.startListening();
+
+            return initialized;
+        }
+        else
+        {
+            oopsies = ErrorType::INVALID_ADDRESS;
+            return false;
+        }
     }
 
     void Network::setMulticastLevel(uint8_t level)
