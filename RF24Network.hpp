@@ -42,53 +42,76 @@ namespace RF24Network
         /**
         *   Constructor
         *
-        *   @param[in]  to      The Octal format, logical node address where the message is going
-        *   @param[in]  type    The type of message
+        *   @param[in]  dstNode     The Octal format, logical node address where the message is going
+        *   @param[in]  msgType     The type of message, as given by RF24Network::MessageType
         */
-        Header(uint16_t to, uint8_t type = static_cast<uint8_t>(MessageType::TX_NORMAL))
+        Header(const uint16_t dstNode, const uint8_t msgType = static_cast<uint8_t>(MessageType::TX_NORMAL))
         {
-            this->toNode = to;
-            this->type = type;
+            /*------------------------------------------------
+            Initialize the payload structure fully
+            ------------------------------------------------*/
+            payload.reserved = 0u;
+            payload.srcNode = EMPTY_LOGICAL_ADDRESS;
+            payload.dstNode = dstNode;
+            payload.msgType = msgType;
+
+            /*------------------------------------------------
+            Grab our ID number and then update the global reference
+            ------------------------------------------------*/
+            payload.id = universalHeaderID++;
         }
 
         /**
-        *   Alternate constructor
+        *   Alternate constructor simply for ease of use
         *
-        *   @param[in]  to      The Octal format, logical node address where the message is going
-        *   @param[in]  type    The type of message
+        *   @param[in]  dstNode     The Octal format, logical node address where the message is going
+        *   @param[in]  msgType     The type of message, as given by RF24Network::MessageType
         */
-        Header(uint16_t to, MessageType type = MessageType::TX_NORMAL)
-        {
-            this->toNode = to;
-            this->type = static_cast<uint8_t>(type);
-        }
+        Header(const uint16_t dstNode, const MessageType type = MessageType::TX_NORMAL)
+            : Header(dstNode, static_cast<uint8_t>(type)) {}
 
-        Header() = default;
+        /**
+        *   Default constructor for creating empty header objects
+        */
+        Header() : Header(EMPTY_LOGICAL_ADDRESS, 0) {}
+
         ~Header() = default;
 
         /**
-        *   Convert the header data into a string. Uses internal memory to create the string, which will
-        *   be overridden on the next call.
+        *   Convert the header payload into a string. Uses internal memory shared across all
+        *   header objects to create the string, which will be overridden on the next call.
         *
-        *   @return String representation of this object
+        *   @return String representation of the payload
         */
         const char *toString() const;
 
-        uint16_t id;        /**< Sequential message ID, incremented every time a new frame is constructed */
-        uint16_t toNode;    /**< Logical address where the message is going */
-        uint16_t fromNode;  /**< Logical address where the message was generated */
-        uint8_t type;       /**< Message type for the header */
+        /**
+        *   The header payload, forcefully packed and aligned to a 32bit width so we can have
+        *   consistent data representation across multiple systems.
+        */
+        #pragma pack(push)
+        #pragma pack(1)
+        struct Payload_t
+        {
+            uint16_t id;        /**< Sequential message ID, incremented every time a new frame is constructed. */
+            uint16_t dstNode;   /**< Logical address (OCTAL) describing where the message is going */
+            uint16_t srcNode;   /**< Logical address (OCTAL) describing where the message was generated */
+            uint8_t msgType;    /**< Message type for the header */
+            uint8_t reserved;   /**< Reserved for system use: Can carry either the fragmentID or headerType */
+        };
+        #pragma pack(pop)
+        static_assert((sizeof(Payload_t) * 8) % 32 == 0, "Payload_t structure not aligned to 32bit width");
+        static_assert(sizeof(Payload_t) <= MAX_HEADER_SIZE, "Payload_t structure is too large!");
+
+        Payload_t payload;
+
+    private:
 
         /**
-        *   During fragmentation, it carries the fragment_id, and on the last fragment
-        *   it carries the header_type.
+        *   Reference variable for the Header class constructor. This lets a new Header object
+        *   know which sequential ID number it should have. This is shared across all header instances.
         */
-        uint8_t reserved; /**< Reserved for system use */
-
-        /*------------------------------------------------
-        Number of bytes in the header. Currently should be 8.
-        ------------------------------------------------*/
-        static constexpr uint8_t SIZE = sizeof(id) + sizeof(toNode) + sizeof(fromNode) + sizeof(type) + sizeof(reserved);
+        static uint16_t universalHeaderID;
     };
 
     /**
@@ -129,7 +152,7 @@ namespace RF24Network
         *   Preamble: Header (8-bytes) + Frame_Size (2-bytes)
         */
         static constexpr uint8_t PREAMBLE_SIZE_Byte = 10;
-        static constexpr uint8_t PREAMBLE_FIELD_HEADER_SIZE_Byte = Header::SIZE;
+        static constexpr uint8_t PREAMBLE_FIELD_HEADER_SIZE_Byte = sizeof(Header::Payload_t);
         static constexpr uint8_t PREAMBLE_FIELD_PAYLOAD_SIZE_Byte = 2;
     };
 
@@ -325,6 +348,13 @@ namespace RF24Network
         bool setAddress(const uint16_t address);
 
         /**
+        *   Retrieves the current network address
+        *
+        *   @return Current network address in octal format
+        */
+        uint16_t getLogicalAddress();
+
+        /**
         *   This node's parent address
         *
         *   @return This node's parent address, or -1 if this is the base
@@ -416,8 +446,8 @@ namespace RF24Network
         bool initialized = false;
 
         uint32_t txTime;
-        uint8_t frameSize;
-        uint16_t logicalNodeAddress; /**< Logical node address of this unit, 1 .. UINT_MAX */
+        uint8_t radioPayloadSize;           /**< How many bytes are available in the radio's FIFO */
+        uint16_t logicalNodeAddress;        /**< Logical node address of this unit, 1 .. UINT_MAX */
 
         bool writeDirect(uint16_t toNode, MessageType directTo);
 

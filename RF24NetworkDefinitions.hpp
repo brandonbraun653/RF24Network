@@ -22,12 +22,16 @@
 namespace RF24Network
 {
     constexpr uint8_t MAX_FRAME_SIZE = NRF24L::MAX_PAYLOAD_WIDTH;
+    constexpr uint8_t MAX_HEADER_SIZE = 8;
 
     /**
     *   The default network address
     */
-    constexpr uint16_t DEFAULT_ADDRESS = 04444;
+    constexpr uint16_t DEFAULT_LOGICAL_ADDRESS = 04444;   /**< (OCTAL) Default value for new nodes */
+    constexpr uint16_t EMPTY_LOGICAL_ADDRESS = 07777;     /**< (OCTAL) Value physically impossible for node to own due to child limits */
     constexpr uint8_t OCTAL_TO_BIN_BITSHIFT = 3u;
+    constexpr uint8_t MIN_NODE_ID = 0;
+    constexpr uint8_t MAX_NODE_ID = 5;
 
     /*------------------------------------------------
     Config Options
