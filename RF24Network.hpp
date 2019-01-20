@@ -22,6 +22,8 @@
 /* C++ Includes */
 #include <cstddef>
 #include <cstdint>
+#include <climits>
+#include <cmath>
 
 /* NRF24L01 Includes */
 #include "nrf24l01.hpp"
@@ -31,6 +33,192 @@
 
 namespace RF24Network
 {
+
+    /**
+    *   Payload that can be used to track the path of a message through the network.
+    *   In total there can be three hops + the original node id which when combined build up
+    *   the full network tree path that was taken.
+    *
+    *   This is mostly useful for nodes that are just joining the network and do not have a
+    *   fully defined network address. The message could be coming from anywhere and the master
+    *   needs to know where to respond.
+    */
+    class Path
+    {
+    public:
+        Path(std::array<uint8_t, MAX_FRAME_PAYLOAD_SIZE> messagePath)
+        {
+            memcpy(&msgPath, messagePath.begin(), sizeof(MessagePath));
+        }
+
+        void process()
+        {
+            uint8_t currentLevel = Level::LEVEL0;
+
+            uint8_t *iter = reinterpret_cast<uint8_t *>(&msgPath);
+            for (uint8_t i = 0; i < sizeof(msgPath); i += sizeof(msgPath.hop0))
+            {
+                if (iter[i] != INVALID_NODE_ID)
+                {
+                    currentLevel++;
+                }
+            }
+
+            networkLevel = static_cast<Level>(currentLevel);
+        }
+
+        #pragma pack(push)
+        #pragma pack(1)
+        struct MessagePath
+        {
+            uint8_t hop0 = INVALID_NODE_ID; /**< This node is the node that sent the message */
+            uint8_t hop1 = INVALID_NODE_ID; /**< Potential parent node id */
+            uint8_t hop2 = INVALID_NODE_ID; /**< Potential grandparent node id */
+            uint8_t hop3 = INVALID_NODE_ID; /**< Potential great grandparent node id */
+        };
+        #pragma pack(pop)
+
+        MessagePath msgPath;
+        Level networkLevel = Level::LEVEL0;
+    };
+
+
+    /**
+    *   Models a node on a network
+    *   //TODO Add more here.
+    */
+    class Node
+    {
+    public:
+        uint8_t childID = INVALID_NODE_ID;
+        uint8_t parentID = INVALID_NODE_ID;
+        uint8_t grandParentID = INVALID_NODE_ID;
+        uint8_t greatGrandParentID = INVALID_NODE_ID;
+
+        /**
+        *   Converts a decimal representation of a logical node address into the class properties
+        *
+        *   @param[in]  nodeID      Node id of a logical device (00, 043, 04444, etc)
+        *   @return void
+        */
+        void fromDecimal(const uint16_t nodeID)
+        {
+            childID = 0xFF & (nodeID >> (CHAR_BIT * 3));
+            parentID = 0xFF & (nodeID >> (CHAR_BIT * 2));
+            grandParentID = 0xFF & (nodeID >> (CHAR_BIT * 1));
+            greatGrandParentID = 0xFF & nodeID;
+        }
+
+        static uint8_t getLevel(const uint16_t address)
+        {
+            auto temp = address;
+            uint8_t level = 0u;
+
+            while (temp)
+            {
+                temp /= 8u;
+                level++;
+            }
+
+            return level;
+        }
+
+        /**
+        *   Converts an octal representation of a logical node address into the class properties
+        *
+        *   @param[in]  nodeID      Node id of a logical device (00, 043, 04444, etc)
+        *   @return void
+        */
+        void fromOctal(const uint16_t nodeID)
+        {
+            auto temp = nodeID;
+            nodeDepth = 0u;
+
+            while (temp)
+            {
+                temp /= 8;
+                nodeDepth++;
+            }
+
+            switch (nodeDepth)
+            {
+            case 1:
+                childID = (nodeID & OCTAL_level1BitMask) >> OCTAL_level1BitShift;
+                parentID = INVALID_NODE_ID;
+                grandParentID = INVALID_NODE_ID;
+                greatGrandParentID = INVALID_NODE_ID;
+                break;
+
+            case 2:
+                childID = (nodeID & OCTAL_level2BitMask) >> OCTAL_level2BitShift;
+                parentID = (nodeID & OCTAL_level1BitMask) >> OCTAL_level1BitShift;
+                grandParentID = INVALID_NODE_ID;
+                greatGrandParentID = INVALID_NODE_ID;
+                break;
+
+            case 3:
+                childID = (nodeID & OCTAL_level3BitMask) >> OCTAL_level3BitShift;
+                parentID = (nodeID & OCTAL_level2BitMask) >> OCTAL_level2BitShift;
+                grandParentID = (nodeID & OCTAL_level1BitMask) >> OCTAL_level1BitShift;
+                greatGrandParentID = INVALID_NODE_ID;
+                break;
+
+            case 4:
+                childID = (nodeID & OCTAL_level4BitMask) >> OCTAL_level4BitShift;
+                parentID = (nodeID & OCTAL_level3BitMask) >> OCTAL_level3BitShift;
+                grandParentID = (nodeID & OCTAL_level2BitMask) >> OCTAL_level2BitShift;
+                greatGrandParentID = (nodeID & OCTAL_level1BitMask) >> OCTAL_level1BitShift;
+                break;
+
+            default:
+                childID = INVALID_NODE_ID;
+                parentID = INVALID_NODE_ID;
+                grandParentID = INVALID_NODE_ID;
+                greatGrandParentID = INVALID_NODE_ID;
+                break;
+            }
+        }
+
+        uint16_t asOctal()
+        {
+            return 0;
+        }
+
+        /**
+        *   Adds a new child to the node at the lowest level of the tree
+        */
+        void addChild(const uint8_t id)
+        {
+
+        }
+
+        bool childID_isValid()
+        {
+            return (MIN_NODE_ID <= childID) && (childID <= MAX_NODE_ID);
+        }
+
+        bool parentID_isValid()
+        {
+            return (MIN_NODE_ID <= parentID) && (parentID <= MAX_NODE_ID);
+        }
+
+        bool grandParentID_isValid()
+        {
+            return (MIN_NODE_ID <= grandParentID) && (grandParentID <= MAX_NODE_ID);
+        }
+
+        bool greatGrandParentID_isValid()
+        {
+            return (MIN_NODE_ID <= greatGrandParentID) && (greatGrandParentID <= MAX_NODE_ID);
+        }
+
+        Node() = default;
+        ~Node() = default;
+
+    private:
+        uint8_t nodeDepth = 0u;
+    };
+
     /**
     *   Header which is sent with each message. The frame put over the air consists of this header
     *   + message. Each are addressed to the appropriate node, and the network forwards them on to
@@ -40,12 +228,22 @@ namespace RF24Network
     {
     public:
         /**
-        *   Constructor
+        *   Constructor to build from a memory buffer
+        *
+        *   @param[in]  buffer      Buffer containing byte data that can be converted to Payload_t
+        */
+        Header(const uint8_t *const buffer)
+        {
+            memcpy(&payload, buffer, sizeof(Payload_t));
+        }
+
+        /**
+        *   Constructor where the user specifies how to the object should be made
         *
         *   @param[in]  dstNode     The Octal format, logical node address where the message is going
         *   @param[in]  msgType     The type of message, as given by RF24Network::MessageType
         */
-        Header(const uint16_t dstNode, const uint8_t msgType = static_cast<uint8_t>(MessageType::TX_NORMAL))
+        Header(const uint16_t dstNode, const uint8_t msgType)
         {
             /*------------------------------------------------
             Initialize the payload structure fully
@@ -78,6 +276,16 @@ namespace RF24Network
         ~Header() = default;
 
         /**
+        *   Allows updating an existing Header object from memory array
+        *
+        *   @param[in]  buffer      Buffer containing byte data that can be converted to Payload_t
+        */
+        void operator()(const uint8_t *const buffer)
+        {
+            memcpy(&payload, buffer, sizeof(Payload_t));
+        }
+
+        /**
         *   Convert the header payload into a string. Uses internal memory shared across all
         *   header objects to create the string, which will be overridden on the next call.
         *
@@ -87,7 +295,8 @@ namespace RF24Network
 
         /**
         *   The header payload, forcefully packed and aligned to a 32bit width so we can have
-        *   consistent data representation across multiple systems.
+        *   consistent data representation across multiple systems. This structure is the bread
+        *   and butter of the class.
         */
         #pragma pack(push)
         #pragma pack(1)
@@ -101,7 +310,7 @@ namespace RF24Network
         };
         #pragma pack(pop)
         static_assert((sizeof(Payload_t) * 8) % 32 == 0, "Payload_t structure not aligned to 32bit width");
-        static_assert(sizeof(Payload_t) <= MAX_HEADER_SIZE, "Payload_t structure is too large!");
+        static_assert(sizeof(Payload_t) <= MAX_FRAME_HEADER_SIZE, "Payload_t structure is too large!");
 
         Payload_t payload;
 
@@ -130,22 +339,14 @@ namespace RF24Network
         Frame() = default;
         ~Frame() = default;
 
-        /**
-        *   Constructor - create a network frame with data
-        *   Frames are constructed and handled differently on Arduino/AVR and Linux devices (defined RF24_LINUX)
-        *
-        *   @param header The RF24Network header to be stored in the frame
-        *   @param message_size The size of the 'message' or data
-        */
-        Frame(Header &header, uint16_t messageSize)
+        void operator()(const uint8_t *const buffer)
         {
-            this->header = header;
-            this->messageSize = messageSize;
+            header(buffer);
+            memcpy(message.begin(), buffer + sizeof(RF24Network::Header::Payload_t), RF24Network::MAX_FRAME_PAYLOAD_SIZE);
         }
 
-        Header header;          /**< Header which is sent with each message */
-        uint16_t messageSize;   /**< The size in bytes of the payload length */
-        uint8_t *messageBuffer; /**< Pointer to the buffer storing the actual message */
+        Header header;
+        std::array<uint8_t, MAX_FRAME_PAYLOAD_SIZE> message;
 
         /**
         *   Number of bytes contained in a frame of data
@@ -333,8 +534,8 @@ namespace RF24Network
 
         /**
         *   Check if a network address is valid or not
-        *   @note Addresses are specified in octal: 011, 034
         *
+        *   @param[in]  node        The octal nodeID to validate
         *   @return True if a supplied address is valid
         */
         bool isValidNetworkAddress(const uint16_t node);
@@ -440,6 +641,36 @@ namespace RF24Network
         */
         uint8_t networkFlags;
 
+        std::array<bool, MAX_NODE_ID> childAttached;
+        std::array<uint16_t, MAX_NODE_ID> children;
+        bool childrenAvailable()
+        {
+            bool result = true;
+            for (bool &val : childAttached)
+            {
+                result &= val;
+            }
+
+            /*------------------------------------------------
+            If result is true, this means there is a child attached
+            at all pipes, meaning we don't have room for another ie == false
+            ------------------------------------------------*/
+            return !result;
+        }
+
+        uint8_t childBitField()
+        {
+            uint8_t bf = 0u;
+            for (uint8_t i = 0; i < children.size(); i++)
+            {
+                if (children[i] != EMPTY_LOGICAL_ADDRESS)
+                {
+                    bf |= 1u << i;
+                }
+            }
+            return bf;
+        }
+
     private:
         ErrorType oopsies = ErrorType::NO_ERROR;
 
@@ -449,12 +680,11 @@ namespace RF24Network
         uint8_t radioPayloadSize;           /**< How many bytes are available in the radio's FIFO */
         uint16_t logicalNodeAddress;        /**< Logical node address of this unit, 1 .. UINT_MAX */
 
+        void enqueue(Header &header);
+
         bool writeDirect(uint16_t toNode, MessageType directTo);
 
         bool writeToPipe(uint16_t node, uint8_t pipe, bool multicast);
-
-
-        uint8_t enqueue(Header *header);
 
         bool isDirectChild(uint16_t node);
         bool isDescendant(uint16_t node);
@@ -470,11 +700,23 @@ namespace RF24Network
             bool multicast;
         };
 
-        bool logicalToPhysicalAddress(logicalToPhysicalStruct *conversionInfo);
+        bool
+        logicalToPhysicalAddress(logicalToPhysicalStruct *conversionInfo);
 
+        /**
+        *   output is octal
+        */
         uint16_t levelToAddress(uint8_t level);
 
-        uint64_t pipeAddress(uint16_t node, uint8_t pipe);
+        /**
+        *   Calculates the the pipe address of a logical node in the tree network. For information on exactly
+        *   how the addressing is calculated, see: http://tmrh20.blogspot.com/ (scroll down mid-way)
+        *
+        *   @param[in]  nodeID      Octal node address (00, 02125, 0444, etc)
+        *   @param[in]  pipe        The pipe number on the given nodeID
+        *   @return The address assigned to that node's pipe
+        */
+        uint64_t pipeAddress(const uint16_t nodeID, const uint8_t pipeNum);
 
         NRF24L::NRF24L01 &radio; /**< Underlying radio driver, provides link/physical layers */
 
@@ -483,9 +725,6 @@ namespace RF24Network
         uint8_t frameQueue[MAIN_BUFFER_SIZE]; /**< Space for a small set of frames that need to be delivered to the app layer */
 
         uint8_t *nextFrame;    /**< Pointer into the frame_queue where we should place the next received frame */
-
-        Frame fragQueue;
-        uint8_t fragQueueMessageBuffer[MAX_PAYLOAD_SIZE]; //frame size + 1
 
         uint16_t parentNode; /**< Our parent's node address */
         uint8_t parentPipe;  /**< The pipe our parent uses to listen to us */

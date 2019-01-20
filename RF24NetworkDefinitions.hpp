@@ -21,8 +21,12 @@
 
 namespace RF24Network
 {
+    /**
+    *   Divides up a single RF24 packet into byte regions.
+    */
     constexpr uint8_t MAX_FRAME_SIZE = NRF24L::MAX_PAYLOAD_WIDTH;
-    constexpr uint8_t MAX_HEADER_SIZE = 8;
+    constexpr uint8_t MAX_FRAME_HEADER_SIZE = 8;
+    constexpr uint8_t MAX_FRAME_PAYLOAD_SIZE = MAX_FRAME_SIZE - MAX_FRAME_HEADER_SIZE;
 
     /**
     *   The default network address
@@ -30,8 +34,25 @@ namespace RF24Network
     constexpr uint16_t DEFAULT_LOGICAL_ADDRESS = 04444;   /**< (OCTAL) Default value for new nodes */
     constexpr uint16_t EMPTY_LOGICAL_ADDRESS = 07777;     /**< (OCTAL) Value physically impossible for node to own due to child limits */
     constexpr uint8_t OCTAL_TO_BIN_BITSHIFT = 3u;
-    constexpr uint8_t MIN_NODE_ID = 0;
+    constexpr uint8_t MIN_NODE_ID = 1;
     constexpr uint8_t MAX_NODE_ID = 5;
+    constexpr uint8_t INVALID_NODE_ID = MAX_NODE_ID + 1;
+    constexpr uint8_t MAX_CHILDREN = 5;
+
+    constexpr uint8_t OCTAL_MASK = 0x07;
+
+    constexpr uint8_t OCTAL_level1BitShift = 0x00;
+    constexpr uint16_t OCTAL_level1BitMask = 0x0007;
+
+    constexpr uint8_t OCTAL_level2BitShift = 0x03;
+    constexpr uint16_t OCTAL_level2BitMask = 0x0038;
+
+    constexpr uint8_t OCTAL_level3BitShift = 0x06;
+    constexpr uint16_t OCTAL_level3BitMask = 0x01C0;
+
+    constexpr uint8_t OCTAL_level4BitShift = 0x09;
+    constexpr uint16_t OCTAL_level4BitMask = 0x0E00;
+
 
     /*------------------------------------------------
     Config Options
@@ -100,7 +121,8 @@ namespace RF24Network
 #define IF_SERIAL_DEBUG_ROUTING(x)
 #endif
 
-    constexpr uint16_t MULTICAST_NODE = 0100;
+    constexpr uint16_t MULTICAST_ADDRESS = 0100;
+    constexpr uint16_t ROUTED_ADDRESS = 070;
 
     /** System Network Message Types
     *
@@ -120,6 +142,7 @@ namespace RF24Network
 
         M = 7,
 
+        NO_MESSAGE = 126,
         MAX_USER_DEFINED_HEADER_TYPE = 127,
 
         /**
@@ -133,7 +156,7 @@ namespace RF24Network
         *   allows nodes to forward multicast messages to the master node, receive a response,
         *   and forward it back to the requester.
         */
-        NETWORK_ADDR_RESPONSE = 128,
+        MESH_ADDR_RESPONSE = 128,
 
         MESH_ADDR_CONFIRM = 129,
 
@@ -204,7 +227,7 @@ namespace RF24Network
         *   write. Any (non-master) node receiving a message of this type will manually forward it to the master node
         *   using an normal network write.
         */
-        NETWORK_REQ_ADDRESS = 195,
+        MESH_REQ_ADDRESS = 195,
 
         MESH_ADDR_LOOKUP = 196,
         MESH_ADDR_RELEASE = 197,
@@ -255,6 +278,18 @@ namespace RF24Network
         RADIO_PRE_INITIALIZED,
         RADIO_FAILED_INIT,
 
+    };
+
+    /**
+    *   Labels for messages and nodes indicating which level
+    */
+    enum Level : uint8_t
+    {
+        LEVEL0 = 0, /**< Reserved for the master node */
+        LEVEL1,     /**< Direct children of master */
+        LEVEL2,     /**< Grandchildren of master */
+        LEVEL3,     /**< Great Grandchildren of master */
+        LEVEL4,     /**< Great Great Grandchildren of master */
     };
 }
 
