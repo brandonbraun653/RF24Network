@@ -15,19 +15,16 @@
 
 /* C++ Includes */
 #include <cstdint>
+#include <climits>
 
 /* NRF24L01 Driver Includes */
 #include "nrf24l01Definitions.hpp"
 
+/* Chimera Includes */
+#include <Chimera/utilities/circular_buffer.hpp>
+
 namespace RF24Network
 {
-    /**
-    *   Divides up a single RF24 packet into byte regions.
-    */
-    constexpr uint8_t MAX_FRAME_SIZE = NRF24L::MAX_PAYLOAD_WIDTH;
-    constexpr uint8_t MAX_FRAME_HEADER_SIZE = 8;
-    constexpr uint8_t MAX_FRAME_PAYLOAD_SIZE = MAX_FRAME_SIZE - MAX_FRAME_HEADER_SIZE;
-
     /**
     *   The default network address
     */
@@ -85,11 +82,13 @@ namespace RF24Network
     /*------------------------------------------------
     Debug Options
     ------------------------------------------------*/
+    #if DEBUG
     #define SERIAL_DEBUG
     //#define SERIAL_DEBUG_MINIMAL
     //#define SERIAL_DEBUG_ROUTING
     //#define SERIAL_DEBUG_FRAGMENTATION
     //#define SERIAL_DEBUG_FRAGMENTATION_L2
+    #endif /* !NDEBUG */
 
 #if defined(SERIAL_DEBUG)
 #define IF_SERIAL_DEBUG(x) ({ x; })
@@ -121,9 +120,136 @@ namespace RF24Network
 #define IF_SERIAL_DEBUG_ROUTING(x)
 #endif
 
+
     constexpr uint16_t MULTICAST_ADDRESS = 0100;
     constexpr uint16_t ROUTED_ADDRESS = 070;
 
+    /*------------------------------------------------
+    Header Class Definitions
+    ------------------------------------------------*/
+    /**
+    *   Number of bytes in the header
+    */
+    constexpr uint8_t HEADER_SIZE = 8;
+
+    /**
+    *   The header payload, forcefully packed and aligned to a 32bit width so we can have
+    *   consistent data representation across multiple systems. This structure is the bread
+    *   and butter of the class.
+    */
+    #pragma pack(push)
+    #pragma pack(1)
+    struct Header_t
+    {
+        uint16_t id;      /**< Sequential message ID, incremented every time a new frame is constructed. */
+        uint16_t dstNode; /**< Logical address (OCTAL) describing where the message is going */
+        uint16_t srcNode; /**< Logical address (OCTAL) describing where the message was generated */
+        uint8_t msgType;  /**< Message type for the header */
+        uint8_t reserved; /**< Reserved for system use: Can carry either the fragmentID or headerType */
+    };
+    #pragma pack(pop)
+    static_assert((sizeof(Header_t) * CHAR_BIT) % 32 == 0, "Payload_t structure not aligned to 32bit width");
+    static_assert(sizeof(Header_t) <= HEADER_SIZE, "Payload_t structure is too large!");
+
+    /*------------------------------------------------
+    Frame Class Definitions
+    ------------------------------------------------*/
+    /**
+    *   Max frame size, limited by the hardware TX/RX FIFO
+    */
+    constexpr uint8_t FRAME_TOTAL_SIZE = NRF24L::MAX_PAYLOAD_WIDTH;
+
+    /**
+    *   Number of bytes contained within our Network Layer header. This is
+    *   a sub-component of our Frame preamble.
+    */
+    constexpr uint8_t FRAME_HEADER_SIZE = HEADER_SIZE;
+
+    /**
+    *   How many bytes into FrameBuffer_t is the header data
+    */
+    constexpr uint8_t FRAME_HEADER_OFFSET = 0;
+
+    /**
+    *   Number of bytes used to indicate the total length of the message. Since
+    *   messages could be fragmented, it must account for a much larger number than
+    *   what a single byte could represent.
+    */
+    constexpr uint8_t FRAME_MSG_LEN_SIZE = 2;
+
+    /**
+    *   How many bytes into FrameBuffer_t is the message length data
+    */
+    constexpr uint8_t FRAME_MSG_LEN_OFFSET = FRAME_HEADER_SIZE;
+
+    /**
+    *   Number of bytes contained in the Frame preamble, which consists of a header
+    *   and the message length information.
+    */
+    constexpr uint8_t FRAME_PREAMBLE_SIZE = FRAME_HEADER_SIZE + FRAME_MSG_LEN_SIZE;
+
+    /**
+    *   How many bytes into FrameBuffer_t is the message data
+    */
+    constexpr uint8_t FRAME_MESSAGE_OFFSET = FRAME_PREAMBLE_SIZE;
+
+    /**
+    *   The total amount (in bytes) of user defined data that can be attached to
+    *   a single frame after the preamble data is accounted for.
+    */
+    constexpr uint8_t MAX_FRAME_PAYLOAD_SIZE = FRAME_TOTAL_SIZE - FRAME_PREAMBLE_SIZE;
+
+    /**
+    *   The size of the main buffer. This is the user-cache, where incoming data is stored.
+    *   Data is stored using Frames: Preamble + Data (?-bytes)
+    */
+//    constexpr uint16_t MULTI_FRAME_BUFFER_SIZE = 144 + FRAME_PREAMBLE_SIZE;
+
+    /**
+    *   Maximum size of fragmented network frames and fragmentation cache. This MUST BE divisible by 24.
+    *   @note: Must be a multiple of 24.
+    *   //TODO: Figure out why it's 24. I think it actually has to be 22 (Frame size - preamble)
+    *   @note: If used with RF24Ethernet, this value is used to set the buffer sizes.
+    */
+//    constexpr uint16_t MAX_FRAG_PAYLOAD_SIZE = MULTI_FRAME_BUFFER_SIZE - FRAME_PREAMBLE_SIZE;
+//    static_assert((MAX_FRAG_PAYLOAD_SIZE % 24u) == 0, "The max frag payload size must be divisible by 24");
+
+    /**
+    *   Defines enough memory to store a full frame of data from the NRF24 radio. The size
+    *   of this array is limited by hardware and should not be changed.
+    */
+    typedef std::array<uint8_t, FRAME_TOTAL_SIZE> FrameBuffer_t;
+    static_assert(sizeof(FrameBuffer_t) == FRAME_TOTAL_SIZE, "Incorrect frame size");
+
+    /**
+    *   Defines enough memory to store the user payload of a frame
+    */
+    typedef std::array<uint8_t, MAX_FRAME_PAYLOAD_SIZE> FramePayload_t;
+    static_assert(sizeof(FramePayload_t) == MAX_FRAME_PAYLOAD_SIZE, "Incorrect frame payload size");
+
+    #pragma pack(push)
+    #pragma pack(1)
+    struct Frame_t
+    {
+        Header_t header;
+        uint16_t messageLength;
+        FramePayload_t message;
+    };
+    #pragma pack(pop)
+    static_assert(sizeof(Frame_t) == FRAME_TOTAL_SIZE, "Frame data structure is the wrong size");
+    static_assert(sizeof(Frame_t::message) == MAX_FRAME_PAYLOAD_SIZE, "Frame message array is the wrong size");
+    static_assert(sizeof(Frame_t::messageLength) == FRAME_MSG_LEN_SIZE, "Frame message length parameter is the wrong size");
+
+    /**
+    *   Defines enough memory for storing multiple frames of data. This is intended
+    *   to serve as the primary user accessible cache for incoming data.
+    */
+    typedef Chimera::Utilities::circular_buffer<Frame_t, 3> FrameCache_t;
+
+
+    /*------------------------------------------------
+    Enum Class Definitions
+    ------------------------------------------------*/
     /** System Network Message Types
     *
     *   The network will determine whether to automatically acknowledge payloads based on their general type:

@@ -31,6 +31,8 @@
 /* Network Includes */
 #include "RF24NetworkDefinitions.hpp"
 
+
+
 namespace RF24Network
 {
 
@@ -227,14 +229,16 @@ namespace RF24Network
     class Header
     {
     public:
+        Header_t data;
+
         /**
         *   Constructor to build from a memory buffer
         *
         *   @param[in]  buffer      Buffer containing byte data that can be converted to Payload_t
         */
-        Header(const uint8_t *const buffer)
+        Header(const FrameBuffer_t &buffer)
         {
-            memcpy(&payload, buffer, sizeof(Payload_t));
+            memcpy(&data, buffer.cbegin(), sizeof(Header_t));
         }
 
         /**
@@ -248,15 +252,15 @@ namespace RF24Network
             /*------------------------------------------------
             Initialize the payload structure fully
             ------------------------------------------------*/
-            payload.reserved = 0u;
-            payload.srcNode = EMPTY_LOGICAL_ADDRESS;
-            payload.dstNode = dstNode;
-            payload.msgType = msgType;
+            data.reserved = 0u;
+            data.srcNode = EMPTY_LOGICAL_ADDRESS;
+            data.dstNode = dstNode;
+            data.msgType = msgType;
 
             /*------------------------------------------------
             Grab our ID number and then update the global reference
             ------------------------------------------------*/
-            payload.id = universalHeaderID++;
+            data.id = universalHeaderID++;
         }
 
         /**
@@ -280,9 +284,31 @@ namespace RF24Network
         *
         *   @param[in]  buffer      Buffer containing byte data that can be converted to Payload_t
         */
-        void operator()(const uint8_t *const buffer)
+        void operator()(const FrameBuffer_t &buffer)
         {
-            memcpy(&payload, buffer, sizeof(Payload_t));
+            memcpy(&data, buffer.cbegin(), sizeof(Header_t));
+        }
+
+        /**
+        *   Copy constructor
+        *
+        *   @param[in]  header      Header class object to copy
+        *   @return void
+        */
+        void operator=(const Header &headerClass)
+        {
+            memcpy(&data, &headerClass.data, sizeof(Header_t));
+        }
+
+        /**
+        *   Copy constructor
+        *
+        *   @param[in]  headerData  Header data object to copy
+        *   @return void
+        */
+        void operator=(const Header_t &headerData)
+        {
+            memcpy(&data, &headerData, sizeof(Header_t));
         }
 
         /**
@@ -292,27 +318,6 @@ namespace RF24Network
         *   @return String representation of the payload
         */
         const char *toString() const;
-
-        /**
-        *   The header payload, forcefully packed and aligned to a 32bit width so we can have
-        *   consistent data representation across multiple systems. This structure is the bread
-        *   and butter of the class.
-        */
-        #pragma pack(push)
-        #pragma pack(1)
-        struct Payload_t
-        {
-            uint16_t id;        /**< Sequential message ID, incremented every time a new frame is constructed. */
-            uint16_t dstNode;   /**< Logical address (OCTAL) describing where the message is going */
-            uint16_t srcNode;   /**< Logical address (OCTAL) describing where the message was generated */
-            uint8_t msgType;    /**< Message type for the header */
-            uint8_t reserved;   /**< Reserved for system use: Can carry either the fragmentID or headerType */
-        };
-        #pragma pack(pop)
-        static_assert((sizeof(Payload_t) * 8) % 32 == 0, "Payload_t structure not aligned to 32bit width");
-        static_assert(sizeof(Payload_t) <= MAX_FRAME_HEADER_SIZE, "Payload_t structure is too large!");
-
-        Payload_t payload;
 
     private:
 
@@ -336,42 +341,45 @@ namespace RF24Network
     class Frame
     {
     public:
-        Frame() = default;
-        ~Frame() = default;
-
-        void operator()(const uint8_t *const buffer)
-        {
-            header(buffer);
-            memcpy(message.begin(), buffer + sizeof(RF24Network::Header::Payload_t), RF24Network::MAX_FRAME_PAYLOAD_SIZE);
-        }
-
-        Header header;
-        std::array<uint8_t, MAX_FRAME_PAYLOAD_SIZE> message;
+        Frame_t data;
 
         /**
-        *   Number of bytes contained in a frame of data
-        *   Preamble: Header (8-bytes) + Frame_Size (2-bytes)
+        *   Constructor to build a Frame from a frame buffer
+        *
+        *   @param[in]  buffer      The new frame data
+        *   @return void
         */
-        static constexpr uint8_t PREAMBLE_SIZE_Byte = 10;
-        static constexpr uint8_t PREAMBLE_FIELD_HEADER_SIZE_Byte = sizeof(Header::Payload_t);
-        static constexpr uint8_t PREAMBLE_FIELD_PAYLOAD_SIZE_Byte = 2;
+        Frame(const FrameBuffer_t &buffer)
+        {
+            memcpy(&data.header, buffer.cbegin() + FRAME_HEADER_OFFSET, sizeof(Header_t));
+            memcpy(&data.messageLength, buffer.cbegin() + FRAME_MSG_LEN_OFFSET, sizeof(data.messageLength));
+            memcpy(data.message.begin(), buffer.cbegin() + FRAME_MESSAGE_OFFSET, sizeof(FramePayload_t));
+        }
+
+        /**
+        *   Default constructor to build an empty Frame
+        */
+        Frame()
+        {
+            data.messageLength = 0u;
+            data.message.fill(0u);
+        }
+
+        ~Frame() = default;
+
+        /**
+        *   Allows updating a Frame object from a new set of data
+        *
+        *   @param[in]  buffer      The new frame data
+        *   @return void
+        */
+        void operator()(const FrameBuffer_t &buffer)
+        {
+            memcpy(&data.header, buffer.cbegin() + FRAME_HEADER_OFFSET, sizeof(Header_t));
+            memcpy(&data.messageLength, buffer.cbegin() + FRAME_MSG_LEN_OFFSET, sizeof(data.messageLength));
+            memcpy(data.message.begin(), buffer.cbegin() + FRAME_MESSAGE_OFFSET, sizeof(FramePayload_t));
+        }
     };
-
-    /**
-    *   The size of the main buffer. This is the user-cache, where incoming data is stored.
-    *   Data is stored using Frames: Preamble + Data (?-bytes)
-    *
-    *   @note The MAX_PAYLOAD_SIZE is (MAIN_BUFFER_SIZE - 10), and the result must be divisible by 24.
-    */
-    constexpr uint16_t MAIN_BUFFER_SIZE = 144 + Frame::PREAMBLE_SIZE_Byte;
-
-    /**
-    *   Maximum size of fragmented network frames and fragmentation cache. This MUST BE divisible by 24.
-    *   @note: Must be a multiple of 24.
-    *   @note: If used with RF24Ethernet, this value is used to set the buffer sizes.
-    */
-    constexpr uint16_t MAX_PAYLOAD_SIZE = MAIN_BUFFER_SIZE - Frame::PREAMBLE_SIZE_Byte;
-    static_assert((MAX_PAYLOAD_SIZE % 24u) == 0, "The max payload size must be divisible by 24!");
 
     /**
     *   Business logic for handling network communications
@@ -596,7 +604,8 @@ namespace RF24Network
         /**
         * The raw system frame buffer of received data.
         */
-        uint8_t frameBuffer[MAX_FRAME_SIZE];
+        //uint8_t frameBuffer[MAX_FRAME_SIZE];
+        FrameBuffer_t frameBuffer;
 
         /**
         *   The frag_ptr is only used with Arduino (not RPi/Linux) and is mainly used for external data systems like RF24Ethernet. When
@@ -680,7 +689,7 @@ namespace RF24Network
         uint8_t radioPayloadSize;           /**< How many bytes are available in the radio's FIFO */
         uint16_t logicalNodeAddress;        /**< Logical node address of this unit, 1 .. UINT_MAX */
 
-        void enqueue(Header &header);
+        void enqueue(Frame &frame);
 
         bool writeDirect(uint16_t toNode, MessageType directTo);
 
@@ -718,13 +727,13 @@ namespace RF24Network
         */
         uint64_t pipeAddress(const uint16_t nodeID, const uint8_t pipeNum);
 
-        NRF24L::NRF24L01 &radio; /**< Underlying radio driver, provides link/physical layers */
+        NRF24L::NRF24L01 &radio;        /**< Underlying radio driver, provides link/physical layers */
 
         uint8_t multicastLevel;
 
-        uint8_t frameQueue[MAIN_BUFFER_SIZE]; /**< Space for a small set of frames that need to be delivered to the app layer */
-
-        uint8_t *nextFrame;    /**< Pointer into the frame_queue where we should place the next received frame */
+        FrameCache_t frameQueue;        /**< Space for a small set of frames that need to be delivered to the app layer */
+//        FrameCachePtr_t nextFrame;      /**< Pointer into the frameQueue where we should place the next received frame */
+//        FrameCachePtr_t topFrame;       /**< Pointer to the top of the frameQueue */
 
         uint16_t parentNode; /**< Our parent's node address */
         uint8_t parentPipe;  /**< The pipe our parent uses to listen to us */
