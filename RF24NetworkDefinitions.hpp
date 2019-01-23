@@ -200,26 +200,17 @@ namespace RF24Network
     constexpr uint8_t MAX_FRAME_PAYLOAD_SIZE = FRAME_TOTAL_SIZE - FRAME_PREAMBLE_SIZE;
 
     /**
-    *   The size of the main buffer. This is the user-cache, where incoming data is stored.
-    *   Data is stored using Frames: Preamble + Data (?-bytes)
-    */
-//    constexpr uint16_t MULTI_FRAME_BUFFER_SIZE = 144 + FRAME_PREAMBLE_SIZE;
-
-    /**
-    *   Maximum size of fragmented network frames and fragmentation cache. This MUST BE divisible by 24.
-    *   @note: Must be a multiple of 24.
-    *   //TODO: Figure out why it's 24. I think it actually has to be 22 (Frame size - preamble)
-    *   @note: If used with RF24Ethernet, this value is used to set the buffer sizes.
-    */
-//    constexpr uint16_t MAX_FRAG_PAYLOAD_SIZE = MULTI_FRAME_BUFFER_SIZE - FRAME_PREAMBLE_SIZE;
-//    static_assert((MAX_FRAG_PAYLOAD_SIZE % 24u) == 0, "The max frag payload size must be divisible by 24");
-
-    /**
     *   Defines enough memory to store a full frame of data from the NRF24 radio. The size
     *   of this array is limited by hardware and should not be changed.
     */
     typedef std::array<uint8_t, FRAME_TOTAL_SIZE> FrameBuffer_t;
     static_assert(sizeof(FrameBuffer_t) == FRAME_TOTAL_SIZE, "Incorrect frame size");
+
+    /**
+    *   Defines enough memory to store the length of the user payload of a frame
+    */
+    typedef uint16_t FrameLength_t;
+    static_assert(sizeof(FrameLength_t) == FRAME_MSG_LEN_SIZE, "Icorrect frame length size");
 
     /**
     *   Defines enough memory to store the user payload of a frame
@@ -232,13 +223,11 @@ namespace RF24Network
     struct Frame_t
     {
         Header_t header;
-        uint16_t messageLength;
+        FrameLength_t messageLength;
         FramePayload_t message;
     };
     #pragma pack(pop)
     static_assert(sizeof(Frame_t) == FRAME_TOTAL_SIZE, "Frame data structure is the wrong size");
-    static_assert(sizeof(Frame_t::message) == MAX_FRAME_PAYLOAD_SIZE, "Frame message array is the wrong size");
-    static_assert(sizeof(Frame_t::messageLength) == FRAME_MSG_LEN_SIZE, "Frame message length parameter is the wrong size");
 
     /**
     *   Defines enough memory for storing multiple frames of data. This is intended

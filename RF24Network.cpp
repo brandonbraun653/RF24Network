@@ -166,7 +166,7 @@ namespace RF24Network
         while (radio.available(pipeNum))
         {
             radioPayloadSize = radio.getDynamicPayloadSize();
-            if (radioPayloadSize < sizeof(Header_t))
+            if (radioPayloadSize < FRAME_PREAMBLE_SIZE)
             {
                 radio.delayMilliseconds(10);
                 continue;
@@ -465,7 +465,7 @@ namespace RF24Network
         ------------------------------------------------*/
         if (len <= max_frame_payload_size)
         {
-            radioPayloadSize = len + sizeof(Header_t);
+            radioPayloadSize = len + FRAME_PREAMBLE_SIZE;
             if (_write(header, message, len, writeDirect))
             {
                 return true;
@@ -487,14 +487,14 @@ namespace RF24Network
         /*------------------------------------------------
         Build the full frame to send
         ------------------------------------------------*/
-        memcpy(frameBuffer.begin(), &header.data, sizeof(Header_t));
-        IF_SERIAL_DEBUG(printf("%lu: NET Sending Header [%s]\n\r", radio.millis(), header.toString()););
+        Frame frame(header.data, len, message);
+        memcpy(frameBuffer.begin(), &frame.data, sizeof(Frame_t));
+        IF_SERIAL_DEBUG
+        (
+            printf("%lu: NET Sending Header [%s]\n\r", radio.millis(), header.toString());
 
-        if (len)
-        {
-            memcpy(frameBuffer.begin() + sizeof(Header_t), message, len);
-            IF_SERIAL_DEBUG
-            (
+            if (len)
+            {
                 uint16_t tmpLen = len;
                 const uint8_t *charPtr = reinterpret_cast<const uint8_t *>(message);
 
@@ -503,9 +503,9 @@ namespace RF24Network
                 {
                     printf("%02x ", charPtr[tmpLen]);
                 }
-                    printf("\n\r");
-            );
-        }
+                printf("\n\r");
+            }
+        );
 
         if (directTo != ROUTED_ADDRESS)
         {
@@ -540,11 +540,10 @@ namespace RF24Network
         /*------------------------------------------------
         Check if the payload message type requires an ACK
         ------------------------------------------------*/
-        Header_t payload;
-        memcpy(&payload, frameBuffer.begin(), sizeof(Header_t));
+        Frame frame(frameBuffer);
 
         //TODO: Convert these magic numbers into their enum equivalent
-        if (payload.msgType > 64 && payload.msgType < 192)
+        if (frame.data.header.msgType > 64 && frame.data.header.msgType < 192)
         {
             isAckType = true;
         }
@@ -587,17 +586,18 @@ namespace RF24Network
             &&  conversion.send_node == toNode
            )
         {
+            auto frame = reinterpret_cast<Frame_t*>(frameBuffer.begin());
 
-            Header *header = (Header *)&frameBuffer;
-            header->data.msgType = static_cast<uint8_t>(MessageType::NETWORK_ACK);          // Set the payload type to NETWORK_ACK
-            header->data.dstNode = header->data.srcNode; // Change the 'to' address to the 'from' address
+            frame->header.msgType = static_cast<uint8_t>(MessageType::NETWORK_ACK);          // Set the payload type to NETWORK_ACK
+            frame->header.dstNode = frame->header.srcNode; // Change the 'to' address to the 'from' address
 
-            conversion.send_node = header->data.srcNode;
+            conversion.send_node = frame->header.srcNode;
             conversion.send_pipe = static_cast<uint8_t>(MessageType::TX_ROUTED);
             conversion.multicast = 0;
             logicalToPhysicalAddress(&conversion);
 
-            //Write the data using the resulting physical address
+            // TODO: When you figure out what this section does, re-evaluate radioPayloadSize...likely to be wrong
+            // TODO: BUG!
             radioPayloadSize = sizeof(Header_t);
             writeToPipe(conversion.send_node, conversion.send_pipe, conversion.multicast);
 

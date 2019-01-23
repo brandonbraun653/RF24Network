@@ -344,6 +344,16 @@ namespace RF24Network
         Frame_t data;
 
         /**
+        *   Constructor to build a Frame from discrete parts
+        */
+        Frame(const Header_t &header, const FrameLength_t &msgLen, const void *const message)
+        {
+            memcpy(&data.header, &header, sizeof(Header_t));
+            memcpy(&data.messageLength, &msgLen, sizeof(FrameLength_t));
+            memcpy(data.message.begin(), message, msgLen);
+        }
+
+        /**
         *   Constructor to build a Frame from a frame buffer
         *
         *   @param[in]  buffer      The new frame data
